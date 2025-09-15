@@ -230,7 +230,7 @@
   <div class="vline h-full"></div>
 
   <!-- open windows -->
-  <div class="flex h-full space-x-1 overflow-hidden flex-1 min-w-0">
+  <div class="flex h-full space-x-1 overflow-hidden flex-1">
     {#each openPrograms as program (program.id)}
       <button
         class="flex h-full flex-1 max-w-60 flex-row {program.windowData

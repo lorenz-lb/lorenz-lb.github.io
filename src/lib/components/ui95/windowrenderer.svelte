@@ -1,5 +1,6 @@
 <script lang="ts">
   import OpenWindow from "./openWindow.svelte";
+  import { uiSettings } from "./uiSettings.svelte";
   import type {
     Program,
     WindowEvents,
@@ -39,6 +40,15 @@
           disableWindowControl: p.windowHints?.disableWindowControl ?? false,
         };
 
+        // Mobile always maximized except when error message is displayed
+        if (uiSettings.isMobile) {
+          if (p.windowHints && !p.windowHints.resizable) {
+            windowData.maximized = false;
+          } else {
+            windowData.maximized = true;
+          }
+        }
+
         console.log("WINDOWDATA CREATED: " + p.id);
         dataManipulator.setWindowData(p.id, windowData);
         dataManipulator.setfocus(p.id);
@@ -50,7 +60,7 @@
 </script>
 
 {#each openPrograms as p (p.id)}
-  {#if p.windowData}
+  {#if p.windowData && !p.windowData!.minimized}
     <OpenWindow
       windowData={p.windowData}
       {availableArea}

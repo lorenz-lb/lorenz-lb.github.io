@@ -45,6 +45,7 @@
   let windowEvents: WindowEvents = {
     onClose: closeProgram,
     onMaximize: maximizeProgram,
+    onMinimize: minimizeProgram,
     onChangeSize: changeSize,
     onChangePosition: changePosition,
   };
@@ -102,7 +103,9 @@
       hints.disableWindowControl = true;
 
       if (uiSettings.isMobile) {
-        hints.width = "100vw";
+        hints.posX = availableArea.offsetWidth * 0.05;
+        hints.posY = availableArea.offsetHeight * 0.3;
+        hints.width = availableArea.offsetWidth * 0.9;
       }
 
       let errorProg: Program = {
@@ -143,6 +146,23 @@
           windowData: {
             ...p.windowData!,
             maximized: !p.windowData!.maximized,
+          },
+        };
+      }
+      return p;
+    });
+  }
+
+  function minimizeProgram(id: number): void {
+    console.log("minimized called!");
+    openPrograms = openPrograms.map((p) => {
+      if (p.id == id) {
+        return {
+          ...p,
+          windowData: {
+            ...p.windowData!,
+            minimized: true,
+            hasfocus: false,
           },
         };
       }
@@ -212,7 +232,12 @@
       if (p.id === id) {
         return {
           ...p,
-          windowData: { ...p.windowData!, hasfocus: true, zindex: ++max_z },
+          windowData: {
+            ...p.windowData!,
+            hasfocus: true,
+            minimized: false,
+            zindex: ++max_z,
+          },
         };
       } else {
         return {
@@ -232,21 +257,27 @@
   });
 </script>
 
-<div class="h-full w-full flex flex-col overflow-hidden">
+<div class="h-full w-full flex flex-col overflow-hidden absolute">
   <!-- Desktop  -->
-  <div class="w-full h-full overflow-hidden" bind:this={availableArea}>
+  <div
+    id="availableArea"
+    class="relative flex overflow-hidden w-full flex-1"
+    bind:this={availableArea}
+  >
+    <!-- icons and bg  -->
     <Desktop {availablePrograms} {openProgram}></Desktop>
+    <!-- Windows -->
+    <Windowrenderer
+      {openPrograms}
+      {windowEvents}
+      {availableArea}
+      {dataManipulator}
+    ></Windowrenderer>
   </div>
 
-  <!-- Windows -->
-  <Windowrenderer
-    {openPrograms}
-    {windowEvents}
-    {availableArea}
-    {dataManipulator}
-  ></Windowrenderer>
-
   <!-- Homebar -->
-  <Homebar {openPrograms} {dataManipulator} {availablePrograms} {openProgram}
-  ></Homebar>
+  <div class="bg-red-500 z-[99999999]">
+    <Homebar {openPrograms} {dataManipulator} {availablePrograms} {openProgram}
+    ></Homebar>
+  </div>
 </div>

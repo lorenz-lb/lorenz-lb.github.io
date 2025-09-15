@@ -59,14 +59,12 @@
       let clampedMouseX = clamp(0, availableArea.offsetWidth, event.clientX);
       let clampedMouseY = clamp(
         off_y,
-        availableArea.clientHeight - handleBar.offsetHeight,
+        availableArea.clientHeight - (handleBar.offsetHeight - off_y),
         event.clientY,
       );
 
       currentPosX = clampedMouseX - off_x;
       currentPosY = clampedMouseY - off_y;
-
-      // set maximized false
     }
   }
 
@@ -92,6 +90,11 @@
     dataManipulator.setfocus(program.id);
   }
   function openwindowMouseUp() {
+    // set maximized false
+    if (!windowData.maximized) {
+      currentHeight = self.offsetHeight;
+      currentWidth = self.offsetWidth;
+    }
     propagateUpdates();
   }
 </script>
@@ -100,23 +103,18 @@
 <div
   bind:this={self}
   id="openWindow"
-  class={`${windowData.resizable ? "resize" : ""} overflow-hidden absolute min-h-15 min-w-15 flex flex-col`}
+  class={`${windowData.resizable ? "resize" : ""} overflow-hidden absolute min-h-10 min-w-30 flex flex-col`}
   style="
-        width: {windowData.maximized
-    ? availableArea.offsetWidth
-    : windowData.width + 'px'};
-
-        height: {windowData.maximized
-    ? availableArea.offsetHeight
-    : windowData.height + 'px'};
+        width: {windowData.maximized ? 'w-full' : windowData.width + 'px'};
+        height: {windowData.maximized ? 'h-full' : windowData.height + 'px'};
         top: {windowData.maximized ? '0px' : currentPosY + 'px'};
         left: {windowData.maximized ? '0px' : currentPosX + 'px'};
+        {windowData.maximized ? 'right: 0px;' : ''}
+        {windowData.maximized ? 'bottom: 0px;' : ''}
         z-index: {windowData.zindex};"
   role="region"
   onmouseup={openwindowMouseUp}
   onmousedown={openwindowMouseDown}
-  bind:offsetWidth={currentWidth}
-  bind:offsetHeight={currentHeight}
 >
   <!-- headder -->
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -228,6 +226,8 @@
     border-left-color: white;
     border-right-color: black;
     border-bottom-color: black;
+
+    box-sizing: border-box;
   }
 
   .grayscale {

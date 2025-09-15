@@ -30,11 +30,12 @@
   // set renderer
   $: {
     // clear screen
-    if (rd_canvas){ 
-    const ctx = rd_canvas.getContext("2d");
-    if (ctx){
-    ctx.clearRect(0, 0, rd_canvas.width, rd_canvas.height);
-    }}
+    if (rd_canvas) {
+      const ctx = rd_canvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, rd_canvas.width, rd_canvas.height);
+      }
+    }
     if (!rd_trace) {
       draw = rd_draw;
     } else {
@@ -171,7 +172,7 @@
   });
 </script>
 
-<div class="flex flex-col lg:flex-col flex-grow gap-6">
+<div class="flex flex-col lg:flex-col flex-grow gap-6 w-full">
   <div class="flex flex-col lg:flex-row flex-grow gap-6">
     <div class="lg:w-1/3 p-6 rounded-lg shadow-md flex flex-col space-y-4">
       <div class="flex flex-col space-y-2">
