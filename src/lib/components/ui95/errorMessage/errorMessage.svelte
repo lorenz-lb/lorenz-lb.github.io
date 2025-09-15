@@ -30,4 +30,3 @@
 <style>
   @import "../assets/ui95.css";
 </style>
-

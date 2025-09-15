@@ -74,6 +74,21 @@
     -webkit-box-sizing: border-box;
   }
 
+  .element3d-disabled {
+    border: black var(--border-winwidth) solid;
+    border-bottom-color: black;
+    border-right-color: black;
+    border-top-color: white;
+    border-left-color: white;
+    color: var(--color-wingray-500);
+    text-shadow: var(--color-winwhite-500) 1px 1px;
+
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+
+  }
+
   .taskbarbutton {
     background-color: var(--color-winlightgray-500);
   }

@@ -97,7 +97,7 @@
   <div class="min-h-screen p-8 space-y-10 overflow-hidden">
     <!-- TEXT -->
     <div class="space-y-10">
-      <img src={banner} />
+      <img src={banner} class="mx-auto block" />
       <h1 class="text-3xl font-bold text-center mb-8">Image dottification</h1>
       <section>
         <!-- prettier-ignore -->
@@ -135,7 +135,7 @@
           are way better tutorials from people who know Rust and/or WebAssembly.
           I will only talk shortly about the idea that I had regarding the
           the structure of the (in the end quite small) Rust implementation.
-          After that I will bore you with some superficial theory about image processing.
+          After that I will bore you with some highly superficial things about image processing.
         </p>
       </section>
 

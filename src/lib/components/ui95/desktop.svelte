@@ -80,7 +80,7 @@
   onmousedown={handleMouseDown}
   role="main"
 >
-  <div class="space-y-1 p-10 z-0">
+  <div class="p-10 z-0">
     {#each availablePrograms as program, index}
       <DesktopIcon
         name={program.title}

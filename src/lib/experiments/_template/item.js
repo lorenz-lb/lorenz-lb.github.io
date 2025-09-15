@@ -1,5 +1,5 @@
 import { base } from "$app/paths";
-import thumb from './dottify.png'
+import thumb from './pix_dottify.png'
 import Dottify from "./dottify.svelte";
 
 let name = 'dottify'

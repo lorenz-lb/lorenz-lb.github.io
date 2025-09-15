@@ -65,6 +65,8 @@
 
       currentPosX = clampedMouseX - off_x;
       currentPosY = clampedMouseY - off_y;
+
+      // set maximized false
     }
   }
 
@@ -98,11 +100,17 @@
 <div
   bind:this={self}
   id="openWindow"
-  class={"resize overflow-hidden absolute min-h-15 min-w-15 flex flex-col"}
-  style="width: {windowData.width}px;
-        height: {windowData.height}px;
-        top: {currentPosY}px;
-        left: {currentPosX}px;
+  class={`${windowData.resizable ? "resize" : ""} overflow-hidden absolute min-h-15 min-w-15 flex flex-col`}
+  style="
+        width: {windowData.maximized
+    ? availableArea.offsetWidth
+    : windowData.width + 'px'};
+
+        height: {windowData.maximized
+    ? availableArea.offsetHeight
+    : windowData.height + 'px'};
+        top: {windowData.maximized ? '0px' : currentPosY + 'px'};
+        left: {windowData.maximized ? '0px' : currentPosX + 'px'};
         z-index: {windowData.zindex};"
   role="region"
   onmouseup={openwindowMouseUp}
@@ -122,22 +130,58 @@
     onmouseup={handleMouseUp}
   >
     <p
-      class="h-full w-full flex-1 text-white flex justify-left items-center m-1 mx-2 overflow-hidden whitespace-nowrap break-keep"
+      class="h-full w-full text-white flex justify-left items-center m-1 mx-2 overflow-hidden whitespace-nowrap break-keep font-bold"
     >
       {program.title}
     </p>
 
-    <!-- close button-->
-    <button
-      id="closeButton"
-      class="h-[calc(100%-5px)] aspect-square mx-1
+    <div class="flex-1 flex w-full h-[70%] items-center px-1">
+      {#if !windowData.disableWindowControl}
+        <!-- minimize and maximize-->
+        <div class="flex w-full h-full justify-end items-center mx-1">
+          <button
+            class="h-full aspect-square
               grid place-items-center
               text-black text-lg font-bold leading-0
-              button3d"
-      onclick={() => windowEvents.onClose(program.id)}>X</button
-    >
-  </div>
+              button3d
+              headbutton"
+            onclick={() => windowEvents.onMinimize(program.id)}
+          >
+            <div
+              class="w-[90%] h-[100%] flex items-end"
+              style="border:solid transparent 3px;"
+            >
+              <hr class="w-[80%]" style="border: solid black 2px;" />
+            </div>
+          </button>
 
+          <button
+            class="h-full aspect-square
+              grid place-items-center
+              text-black text-lg font-bold
+              button3d
+              headbutton"
+            onclick={() => windowEvents.onMaximize(program.id)}
+          >
+            <div
+              class="w-[70%] h-[70%]"
+              style="border:solid black 2px;border-top-width: 4px;"
+            ></div>
+          </button>
+        </div>
+      {/if}
+      <!-- close button-->
+      <button
+        class="headbutton"
+        class:button3d={!windowData.disableWindowControl}
+        class:element3d-disabled={windowData.disableWindowControl}
+        disabled={windowData.disableWindowControl}
+        onclick={() => windowEvents.onClose(program.id)}
+      >
+        X</button
+      >
+    </div>
+  </div>
   <!-- contents-->
   <div class="flex-1 w-full flex flex-row overflow-hidden">
     <div
@@ -159,10 +203,17 @@
 <style>
   @import "./assets/ui95.css";
 
-  #closeButton {
+  .headbutton {
     border-width: 2px;
     background-color: #c3c3c3;
     font-size: large;
+    height: 100%;
+    aspect-ratio: 1/1;
+    font-weight: bold;
+    text-align: center;
+    display: flex;
+    justify-content: center; /* Horizontale Zentrierung */
+    align-items: center; /* Vertikale Zentrierung */
   }
 
   #windowHead {
@@ -177,5 +228,9 @@
     border-left-color: white;
     border-right-color: black;
     border-bottom-color: black;
+  }
+
+  .grayscale {
+    filter: grayscale();
   }
 </style>

@@ -19,15 +19,25 @@ export type WindowData = {
   maximized: boolean;
   hasfocus: boolean;
   zindex: number;
+  resizable: boolean;
+  disableWindowControl: boolean;
 }
 
 export interface WindowHints {
-  width: number;
-  height: number;
+  width?: any;
+  height?: any;
+  posX?: any;
+  posY?: any;
+  maximized?: boolean;
+  resizable?: boolean;
+  disableWindowControl?: boolean;
 }
 
 export interface WindowEvents {
   onClose: (id: number) => void;
+  onMinimize: (id: number) => void;
+  onMaximize: (id: number) => void;
+
   onChangePosition: (id: number, newX: number, newY: number) => void;
   onChangeSize: (id: number, newWidth: number, newHeight: number) => void;
 }

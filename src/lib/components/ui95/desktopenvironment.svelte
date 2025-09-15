@@ -4,11 +4,13 @@
     WindowData,
     WindowEvents,
     DataManipulator,
+    WindowHints,
   } from "./ui95types";
   import Homebar from "./homebar.svelte";
   import Desktop from "./desktop.svelte";
   import Windowrenderer from "./windowrenderer.svelte";
   import { onMount } from "svelte";
+  import { uiSettings } from "./uiSettings.svelte";
 
   let { toOpen }: { toOpen?: string[] } = $props();
 
@@ -16,6 +18,7 @@
   const urlMapping = new Map<string, string>([
     ["dot", "dottify"],
     ["mob", "mobilitymodels"],
+    ["chx", "chexcel"],
   ]);
   const itemdataToProgramID = new Map<string, number>();
 
@@ -23,7 +26,10 @@
   import type { ItemData } from "$lib/types";
   import dottify_item from "../../experiments/dottify/item";
   import mobility_item from "../../experiments/mobility_models/item";
+  import chexcel_item from "../../experiments/chexcel/item";
+
   import error_item from "../ui95/errorMessage/item";
+  //let experiments: ItemData[] = [dottify_item, mobility_item, chexcel_item];
   let experiments: ItemData[] = [dottify_item, mobility_item];
   // add to url mapping
   experiments.forEach((x) => urlMapping.set(x.id.toLowerCase(), x.id));
@@ -38,6 +44,7 @@
 
   let windowEvents: WindowEvents = {
     onClose: closeProgram,
+    onMaximize: maximizeProgram,
     onChangeSize: changeSize,
     onChangePosition: changePosition,
   };
@@ -76,18 +83,35 @@
         let program = availablePrograms.find((x) => x.id == programID);
 
         if (program) {
+          let hints: WindowHints | null = null;
+
+          if (uiSettings.isMobile) {
+            hints = { width: "100%", height: "100%" };
+            hints.maximized = true;
+          }
+
+          program.windowHints = hints;
           openProgram(program);
         }
       }
     } else {
       console.log("could not find  " + name);
+
+      let hints: WindowHints = { width: 400, height: 160 };
+      hints.resizable = false;
+      hints.disableWindowControl = true;
+
+      if (uiSettings.isMobile) {
+        hints.width = "100vw";
+      }
+
       let errorProg: Program = {
         id: 1 + Math.max(...availablePrograms.map((x) => x.id)),
         image: error_item.image,
         title: `Could not find Program "${name}"`,
         windowData: null,
         component: error_item.component,
-        windowHints: { width: 400, height: 160 },
+        windowHints: hints,
       };
 
       openProgram(errorProg);
@@ -107,8 +131,23 @@
   }
 
   function closeProgram(id: number): void {
-    console.log(openPrograms);
     openPrograms = openPrograms.filter((program: Program) => program.id != id);
+  }
+
+  function maximizeProgram(id: number): void {
+    console.log("maximize called!");
+    openPrograms = openPrograms.map((p) => {
+      if (p.id == id) {
+        return {
+          ...p,
+          windowData: {
+            ...p.windowData!,
+            maximized: !p.windowData!.maximized,
+          },
+        };
+      }
+      return p;
+    });
   }
 
   function changeSize(id: number, newWidth: number, newHeight: number): void {

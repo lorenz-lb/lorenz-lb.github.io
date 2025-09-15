@@ -85,15 +85,13 @@
         }
       }}
     >
-      <div class="flex w-full mx-1">
+      <div class="flex w-full h-full mx-1">
         <img
           src={start_icon}
           alt="svelte windows logo"
-          class="[image-rendering:pixelated] m-[2px]"
+          class="[image-rendering:pixelated] m-[2px] aspect-square"
         />
-        <p
-          class="flex h-full items-center text-center leading-0 font-bold text-2xl"
-        >
+        <p class="flex h-full items-center text-center font-bold text-2xl">
           Start
         </p>
       </div>
@@ -181,10 +179,10 @@
                   image={github_icon}
                   bind:currentPath
                   height={30}
-                  data={"https://github.com/MrRaptorious"}
+                  data={"https://github.com/lorenz-lb"}
                   clicked={() => {
                     window
-                      ?.open("https://github.com/MrRaptorious", "_blank")
+                      ?.open("https://github.com/lorenz-lb", "_blank")
                       ?.focus();
                     showStartMenu = false;
                   }}
@@ -302,8 +300,14 @@
                 close={hiddeBubble}
               >
                 <svelte:fragment>
-                  <div>
-                    <p class="text-left mx-1 whitespace-nowrap p-2">
+                  <div
+                    class="max-h-[50vh] max-w-[80vw]"
+                    style={uiSettings.isMobile ? "width: 80vw;" : ""}
+                  >
+                    <p
+                      class="text-left mx-1 p-2 max-w-fit whitespace-nowrap"
+                      style={uiSettings.isMobile ? "white-space: wrap;" : ""}
+                    >
                       <b>Hello!</b> <br />
                       This is my hobby project/portfolio where I show things I wanted
                       to explore or read about.<br />Feel free to look around.
@@ -311,8 +315,16 @@
                       Interesting things! <br /> <br />
                       <b>Tipp</b>: If it's too hard to read the pixelated text
                       inside a window, click the [T] icon in the tray.
+                      <br />
+                      {#if uiSettings.isMobile}
+                        <br />
+                        <b class="text-winred-500"
+                          >This website is optimized for desktop use. It is,
+                          however, partially usable on a smartphone.</b
+                        >
+                      {/if}
                     </p>
-                    <hr class="mx-20 mt-2 border-wininfo-200" />
+                    <hr class="mx-[10%] mt-2 border-wininfo-200" />
                     <button
                       class="w-20 border-1 border-wininfo-200 rounded-md m-2 hover:border-2 box-border px-[1px] py-[1px] hover:p-0 negative-push"
                       onclick={(event) => {

@@ -27,14 +27,16 @@
     openPrograms.forEach((p) => {
       if (!p.windowData) {
         let windowData: WindowData = {
-          pos_x: availableArea.offsetWidth * 0.1,
-          pos_y: availableArea.offsetHeight * 0.1,
+          pos_x: p.windowHints?.posX ?? availableArea.offsetWidth * 0.1,
+          pos_y: p.windowHints?.posY ?? availableArea.offsetHeight * 0.1,
           width: p.windowHints?.width ?? availableArea.offsetWidth * 0.8,
           height: p.windowHints?.height ?? availableArea.offsetHeight * 0.8,
-          maximized: false,
+          maximized: p.windowHints?.maximized ?? false,
           minimized: false,
           hasfocus: false,
           zindex: 0,
+          resizable: p.windowHints?.resizable ?? true,
+          disableWindowControl: p.windowHints?.disableWindowControl ?? false,
         };
 
         console.log("WINDOWDATA CREATED: " + p.id);

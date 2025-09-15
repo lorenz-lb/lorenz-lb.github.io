@@ -2,6 +2,7 @@
     import "../app.css";
     import { MediaQuery } from "svelte/reactivity";
     import { page } from "$app/state";
+    import { uiSettings } from "$lib/components/ui95/uiSettings.svelte";
 
     // #################### Desktop Icons ####################
     import Desktopenvironment from "$lib/components/ui95/desktopenvironment.svelte";
@@ -11,12 +12,13 @@
     $effect(() => {
         keys = [...page.url.searchParams.keys()];
         dorender = true;
+        uiSettings.isMobile = !large.current;
     });
 </script>
 
 {#if dorender}
-    {#if large.current}
-        <div class="w-screen h-screen overflow-hidden fixed">
+    {#if large}
+        <div class="w-screen h-[100dvh] overflow-hidden fixed">
             <Desktopenvironment toOpen={keys}></Desktopenvironment>
         </div>
     {:else}

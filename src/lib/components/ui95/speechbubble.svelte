@@ -25,7 +25,7 @@
 </script>
 
 <div
-  class="absolute bottom-13 text-black bg-wininfo-500 border rounded-md speech-bubble"
+  class="absolute bottom-13 text-black bg-wininfo-500 border rounded-md"
   style="right: {right_offset}{right_offset_unit};"
 >
   <div
