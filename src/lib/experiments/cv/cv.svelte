@@ -107,7 +107,7 @@
       </div>
       <div class="second-col">
         <p class="main">
-          IT specialist for <br /> Aplication Development
+          IT specialist for <br /> Application Development
         </p>
         <p class="sub">Syntactix GmbH, Friedrichsdorf</p>
       </div>
