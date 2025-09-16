@@ -22,15 +22,22 @@
   ]);
   const itemdataToProgramID = new Map<string, number>();
 
-  // ************ Programs ************
+  // ************ Programs & Files ************
   import type { ItemData } from "$lib/types";
   import dottify_item from "../../experiments/dottify/item";
   import mobility_item from "../../experiments/mobility_models/item";
   import chexcel_item from "../../experiments/chexcel/item";
+  import cv_item from "../../experiments/cv/item";
+  import scrum_item from "../../experiments/scrum/item";
 
   import error_item from "../ui95/errorMessage/item";
   //let experiments: ItemData[] = [dottify_item, mobility_item, chexcel_item];
-  let experiments: ItemData[] = [dottify_item, mobility_item];
+  let experiments: ItemData[] = [
+    dottify_item,
+    mobility_item,
+    cv_item,
+    scrum_item,
+  ];
   // add to url mapping
   experiments.forEach((x) => urlMapping.set(x.id.toLowerCase(), x.id));
   // ************ end Programs ************
@@ -67,6 +74,7 @@
         component: itemdata.component,
         windowData: null,
         windowHints: null,
+        type: itemdata.type,
       };
     },
   );

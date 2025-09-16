@@ -9,6 +9,7 @@
     Program,
   } from "$lib/components/ui95/ui95types";
   import Speechbubble from "./speechbubble.svelte";
+  import { FileType } from "$lib/types";
 
   import msg_information from "$lib/components/ui95/assets/msg_information.png";
   import start_icon from "$lib/components/ui95/assets/start_icon.png";
@@ -123,20 +124,22 @@
             <div class="absolute" style="right: 0px; top: 0px;">
               <div class="absolute flex element3d flex-col min-w-50">
                 {#each availablePrograms as program}
-                  <StartmenuItem
-                    id={currentID++}
-                    text={program.title}
-                    image={program.image}
-                    bind:currentPath
-                    height={30}
-                    data={program.id}
-                    clicked={() => {
-                      openProgram(program);
+                  {#if program.type == FileType.Executable}
+                    <StartmenuItem
+                      id={currentID++}
+                      text={program.title}
+                      image={program.image}
+                      bind:currentPath
+                      height={30}
+                      data={program.id}
+                      clicked={() => {
+                        openProgram(program);
 
-                      showStartMenu = false;
-                    }}
-                    highlighted={true}
-                  ></StartmenuItem>
+                        showStartMenu = false;
+                      }}
+                      highlighted={true}
+                    ></StartmenuItem>
+                  {/if}
                 {/each}
               </div>
             </div>
@@ -152,13 +155,24 @@
           >
             <div class="absolute" style="right: 0px; top: 0px; ">
               <div class="absolute flex element3d flex-col min-w-50">
-                <StartmenuItem
-                  id={currentID++}
-                  text={"Empty"}
-                  image={forbidden_icon}
-                  bind:currentPath
-                  height={30}
-                ></StartmenuItem>
+                {#each availablePrograms as program}
+                  {#if program.type == FileType.Document}
+                    <StartmenuItem
+                      id={currentID++}
+                      text={program.title}
+                      image={program.image}
+                      bind:currentPath
+                      height={30}
+                      data={program.id}
+                      clicked={() => {
+                        openProgram(program);
+
+                        showStartMenu = false;
+                      }}
+                      highlighted={true}
+                    ></StartmenuItem>
+                  {/if}
+                {/each}
               </div>
             </div>
           </StartmenuItem>

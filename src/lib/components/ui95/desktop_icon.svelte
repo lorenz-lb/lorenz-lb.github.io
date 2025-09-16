@@ -22,7 +22,7 @@
       ondragstart={(e) => e.preventDefault()}
       alt={name}
     />
-    <p class="leading-none">{name}</p>
+    <p class="leading-none text-winwhite-500">{name}</p>
   </button>
 </div>
 

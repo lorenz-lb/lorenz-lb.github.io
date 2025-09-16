@@ -1,11 +1,17 @@
 import type { SvelteComponent } from "svelte";
 
-export type ItemData = {
-    id: string,
-    image: any,
-    title: string; 
-    subtitle: string; 
-    tags: string[];
-    link: string; 
-    component: any 
+export enum FileType {
+	Executable,
+	Document
+}
+
+export interface ItemData {
+	id: string,
+	image: any,
+	title: string;
+	subtitle: string;
+	tags: string[];
+	link: string;
+	component: any;
+	type: FileType;
 }

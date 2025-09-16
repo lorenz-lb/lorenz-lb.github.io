@@ -1,5 +1,6 @@
 import { base } from "$app/paths";
 import TestComp from "./testComp.svelte";
+import { FileType, type ItemData } from "$lib/types"
 
 let name = 'test'
 
@@ -11,4 +12,5 @@ export default {
     tags: ["test"].toSorted(),
     link: `${base}/experiments/${name}`,
     component: TestComp,
-};
+    type: FileType.Executable,
+} as ItemData;

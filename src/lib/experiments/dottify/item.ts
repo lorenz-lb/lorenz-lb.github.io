@@ -1,6 +1,7 @@
 import { base } from "$app/paths";
 import thumb from './dottify.png'
 import Dottify from "./dottify.svelte";
+import { type ItemData, FileType } from "$lib/types";
 
 let name = 'dottify'
 
@@ -12,4 +13,5 @@ export default {
     tags: ["rust", "wasm", "Generative Art"].toSorted(),
     link: `${base}/experiments/${name}`,
     component: Dottify,
-};
+    type: FileType.Executable,
+} as ItemData;

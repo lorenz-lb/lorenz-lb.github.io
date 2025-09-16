@@ -1,5 +1,6 @@
 
 import type { Component } from "svelte";
+import { FileType } from "$lib/types";
 
 export type Program = {
   id: number;
@@ -8,6 +9,7 @@ export type Program = {
   component: Component;
   windowData: WindowData | null;
   windowHints: WindowHints | null;
+  type: FileType;
 }
 
 export type WindowData = {
@@ -46,4 +48,5 @@ export interface DataManipulator {
   setWindowData: (id: number, windowData: WindowData) => void;
   setfocus: (id: number) => void;
 }
+
 

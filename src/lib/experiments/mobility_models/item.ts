@@ -1,6 +1,7 @@
 import { base } from "$app/paths";
 import thumb from './pix_mobility.png'
 import Mobility from "./mobility.svelte";
+import { type ItemData, FileType } from "$lib/types";
 
 let name = 'Mobility Models'
 
@@ -12,4 +13,5 @@ export default {
     tags: ["sim", "rust", "wasm"].toSorted(),
     link: `${base}/experiments/mobility_models`,
     component: Mobility,
-};
+    type: FileType.Executable,
+} as ItemData;
