@@ -43,7 +43,7 @@
       </div>
 
       <div class="col-span-2 items-center text-center">
-        For more personal information please contact me on <a
+        For more personal information please consider contacting me on <a
           href="https://www.linkedin.com/in/lorenz-braun/">LinkedIn</a
         >
       </div>
