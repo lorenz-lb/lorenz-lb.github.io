@@ -34,7 +34,7 @@
         <p class="">
 Yes you read that right. Chexcel. Chess in Excel.<br>
 But why? <br>
-Once a famous man (who definitely lived a long and happy life and is not just a videogame character) said: <br>
+Once a famous man (who definitely lived a long and happy life and is not just a video game character) said: <br>
 <br>
 
 </p>
@@ -43,20 +43,20 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
         </blockquote>
         <p>
           <br />
-          But lets start in the beginning. One day a fellow student accused me of
-          being a “Vibe coder” and send the following meme with the words
-          <br />“Oh look Lorenz has vibe coded a chess game”
+          But let's start in the beginning. One day a fellow student accused me of
+          being a "vibe coder" and sent the following meme with the words
+          <br />"Oh look, Lorenz has vibe-coded a chess game".
         </p>
 
         <figure class="fig-center">
           <img src={img_vibe} alt="vibe" class="w-full max-w-100" />
           <figcaption class="mt-2">
-            *For the record I think this is actually quite funny
+            *For the record, I think this is actually quite funny
           </figcaption>
         </figure>
         <p>
-          That evening, I started developing my webpage (the one you’re reading
-          right now) and realized that I not only needed the webpage itself, but
+          That evening, I started developing my webpage (the one you're reading
+          right now) and realized that I not only needed the webpage itself but
           also some content to fill it. Then it hit me: Chess in Excel –
           Chexcel! It would be a completely useless spreadsheet, probably with
           fewer features than the real thing, consuming my time and resulting in
@@ -75,7 +75,7 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
           I encourage you to check out the video and leave a like, it’s very entertaining.<br
           />
           And because the concept of chess in Excel wasn’t ridiculous enough, I decided
-          to use Excel exactly as god intended: no macros, no VBA, nothing. Just
+          to use Excel exactly as God intended: no macros, no VBA, nothing. Just
           formulas and frustration!
           <br />
           <br />
@@ -98,9 +98,9 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
           exactly when Excel updates each cell’s value.
         </p>
         <p>
-          The second information I yanked from Inkbox is that excel updates its
+          The second piece of information I yanked from Inkbox is that Excel updates its
           cells from the top left to the bottom right. A direct result of that
-          is that if you have a formular which references cells which are
+          is that if you have a formular that references cells that are
           updated later, the calculation may end up using outdated values. So,
           not only do the formulas themselves need to be correct, but the
           relative position of the cells also matters.
@@ -108,7 +108,7 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
         <h3>Assigning Data</h3>
         <p>
           Another very important concept in Excel makes this entire project much
-          more complicated and convoluted: Each cell can only modify its own
+          more complicated and convoluted: each cell can only modify its own
           value. What sounds obvious at first is actually the key difference
           between “normal” programming and programming in Excel (if you can even
           call it that). In most programming languages, you can easily create
@@ -150,7 +150,7 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
           that determines the “aliveness” of one chess piece. Second, this
           introduces the next concept.
         </p>
-        <h3>Self referencing</h3>
+        <h3>Self-referencing</h3>
         <p>
           What would normally result in a circular reference problem is actually
           what makes this entire project possible: self-referencing. A cell only
@@ -299,7 +299,7 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
         </p>
         <h3>Selectable Pieces</h3>
         <p>
-          For that we simply assume that we have a Matrix for each piece
+          For that, we simply assume that we have a matrix for each piece
           containing all its possible moves. This could look something like
           this:
         </p>
@@ -315,7 +315,7 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
           With this setup, we can simply check whether the sum of a piece’s
           corresponding matrix is greater than 0. If it is, the piece can move.
           Then, if the piece is alive and matches the color of the current
-          player, it can be selected. The formular for that looks like this:
+          player, it can be selected. The formula for that looks like this:
         </p>
 
         <figure>
@@ -437,8 +437,8 @@ A = [1,2,3,4]; B = [1,1,1,1]
           The idea is to create a matrix containing all possible moves by
           consecutively applying rules to narrow down each piece’s options until
           only legal moves remain. This rule application is done by creating
-          intersections of matrices. For that we need different matricies. First
-          of all, an <code>ID_MATRIX</code> is created which is just a table
+          intersections of matrices. For that we need different matrices. First
+          of all, an <code>ID_MATRIX</code> is created, which is just a table
           containing all IDs at the correct positions for each piece, respecting
           if a piece is alive or not. Initial the <code>ID_MATRIX</code> looks something
           like this:
@@ -447,10 +447,10 @@ A = [1,2,3,4]; B = [1,1,1,1]
           <img src={img_id_mat} alt="-" />
         </figure>
         <p>
-          There are also “helper” matricies which are used in some <code
+          There are also "helper" matrices, which are used in some <code
             >MAP</code
           >
-          functions to give access to the Position or the <code>x</code> and
+          functions to give access to the position or the <code>x</code> and
           <code>y</code> coordinates while processing a matrix.
         </p>
 
@@ -481,8 +481,8 @@ A = [1,2,3,4]; B = [1,1,1,1]
         </figure>
 
         <p>
-          The white Rook can capture the black piece but should not be able to
-          move further. To esure that we simply create a new matrix called the
+          The white rook can capture the black piece but should not be able to
+          move further. To ensure that we simply create a new matrix called the
           <code>SUM_MATRIX</code>. It sums up the occurrences of pieces between
           a position and the piece.
         </p>
@@ -493,9 +493,9 @@ A = [1,2,3,4]; B = [1,1,1,1]
         <p>
           If a square we've calculated as walkable also has a sum of 0 in the
           <code>SUM_MATRIX</code>, we know for a fact that no pieces were
-          skipped. This method works for the Rook and King. The Queen and
-          Bishop, however, can move diagonally and thus require special
-          handling. This is where the Group mask comes in. It lets the formula
+          skipped. This method works for the rook and king. The queen and
+          bishop, however, can move diagonally and thus require special
+          handling. This is where the <code>GroupMask</code> comes in. It lets the formula
           differentiate between diagonal and horizontal movements.
         </p>
         <figure class="fig-center">
@@ -503,15 +503,15 @@ A = [1,2,3,4]; B = [1,1,1,1]
         </figure>
 
         <p>
-          I wont bother you with how exactly the masks are overlayed.
-          Essentially its some index calculation, offsets etc.. The pawn gets
+          I won't bother you with how exactly the masks are overlaid.
+          Essentially, it's some index calculation, offsets, etc.. The pawn gets
           multiple masks because its movement is not identical between black and
           white. Also, the first move and the capture process of the pawn are
           special cases. But with the LET function introduced before, a simple
           conditional assignment is possible to always use the correct mask.
         </p>
         <p>
-          The following gif demonstrates the steps taken to get the final set of
+          The following GIF demonstrates the steps taken to get the final set of
           positions each piece can move to. The board layout is that the white
           pawn at the bottom right already went two steps and the matrix
           calculated is for the white rook at the bottom right.
@@ -519,7 +519,7 @@ A = [1,2,3,4]; B = [1,1,1,1]
         <p>
           First it’s assumed that all board spaces are walkable. The second step
           is to remove all spaces already occupied by the same color. Then the
-          corresponding Mask, here the Rook Mask is applied. In the end the
+          corresponding mask, here the rook mask is applied. In the end, the
           <code>SUM_MATRIX</code> is used. Note that the <code>SUM_MATRIX</code>
           is not a simple <code>AND</code>
           operation but more like a <code>where SUM_MATRIX == 0</code>.
@@ -547,7 +547,7 @@ A = [1,2,3,4]; B = [1,1,1,1]
         <p>
           I just couldn't be bothered to implement pawn promotion or the en
           passant rule. I know they're both very important, but I decided to
-          call it a day. Its not chess, its Chexcel!
+          call it a day. It's not chess, it's Chexcel!
         </p>
       </section>
       <section>
@@ -556,8 +556,8 @@ A = [1,2,3,4]; B = [1,1,1,1]
           I learned a lot about Excel, especially by extensively studying its
           various functions. But that wasn't really the point. I wanted to prove
           a point… . I can do it if I'm dedicated enough. Modern systems and
-          tools are often so complex that I find myself thinking “I'd never be
-          able to do that, I'm not skilled enough.”. The reality, however, is
+          tools are often so complex that I find myself thinking "I'd never be
+          able to do that, I'm not skilled enough". The reality, however, is
           that with time and dedication, you can accomplish many, many things.
         </p>
         <p>
@@ -590,7 +590,7 @@ A = [1,2,3,4]; B = [1,1,1,1]
         <br />
         <p>
           Anit Shoutout to Excel not being able to open two different
-          Spreadsheets with the same name.
+          spreadsheets with the same name.
         </p>
         <br />
         <p>
