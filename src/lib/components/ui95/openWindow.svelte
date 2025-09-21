@@ -186,7 +186,9 @@
       class="flex-1 overflow-auto"
       style="font-family: {uiSettings.fontPixelated
         ? 'Windows95, sans-serif'
-        : 'sans-serif'};"
+        : 'sans-serif'};
+        {!uiSettings.isMobile ? "font-size: 14pt;": ""}
+        "
     >
       <!-- svelte-ignore svelte_component_deprecated -->
       <svelte:component

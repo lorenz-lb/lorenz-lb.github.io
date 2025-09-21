@@ -18,7 +18,7 @@
 
 {#if dorender}
     {#if large}
-        <div class="w-screen h-[100dvh] overflow-hidden fixed">
+        <div class="w-screen h-[100dvh] overflow-hidden fixed ">
             <Desktopenvironment toOpen={keys}></Desktopenvironment>
         </div>
     {:else}

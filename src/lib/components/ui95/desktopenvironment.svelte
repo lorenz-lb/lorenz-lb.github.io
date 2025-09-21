@@ -31,12 +31,12 @@
   import scrum_item from "../../experiments/scrum/item";
 
   import error_item from "../ui95/errorMessage/item";
-  //let experiments: ItemData[] = [dottify_item, mobility_item, chexcel_item];
   let experiments: ItemData[] = [
     dottify_item,
     mobility_item,
     cv_item,
     scrum_item,
+    chexcel_item,
   ];
   // add to url mapping
   experiments.forEach((x) => urlMapping.set(x.id.toLowerCase(), x.id));
