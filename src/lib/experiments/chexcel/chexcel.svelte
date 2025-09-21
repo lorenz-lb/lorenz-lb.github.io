@@ -575,10 +575,14 @@ A = [1,2,3,4]; B = [1,1,1,1]
         </p>
         <br /><br /><br />
         <p>
-          If you want to play chess in Excel, visit my GitHub (Start &gt; Links &gt; Github)! If you find a bug
-          in the Excel sheet or something that doesn't work as expected, let me
-          know (I probably won't fix it). The best part is that you don't need
-          to enable macros in the spreadsheet because there are none!
+          If you want to play chess in Excel, visit my <a
+            class="link"
+            href="https://github.com/lorenz-lb/chexcel"
+            >GitHub
+          </a> (Start &gt; Links &gt; Github)! If you find a bug in the Excel sheet
+          or something that doesn't work as expected, let me know (I probably won't
+          fix it). The best part is that you don't need to enable macros in the spreadsheet
+          because there are none!
         </p>
         <br />
 
@@ -590,7 +594,8 @@ A = [1,2,3,4]; B = [1,1,1,1]
         </p>
         <br />
         <p>
-          A special thanks to Stephi for getting me to waste multiple days of my life, but the meme was funny.
+          A special thanks to Stephi for getting me to waste multiple days of my
+          life, but the meme was funny.
         </p>
       </section>
     </div>
