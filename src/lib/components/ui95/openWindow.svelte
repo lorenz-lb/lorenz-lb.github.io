@@ -187,7 +187,7 @@
       style="font-family: {uiSettings.fontPixelated
         ? 'Windows95, sans-serif'
         : 'sans-serif'};
-        {!uiSettings.isMobile ? "font-size: 14pt;": ""}
+        {!uiSettings.isMobile ? 'font-size: 14pt;' : ''}
         "
     >
       <!-- svelte-ignore svelte_component_deprecated -->

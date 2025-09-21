@@ -4,7 +4,6 @@
     import { page } from "$app/state";
     import { uiSettings } from "$lib/components/ui95/uiSettings.svelte";
 
-    // #################### Desktop Icons ####################
     import Desktopenvironment from "$lib/components/ui95/desktopenvironment.svelte";
     let keys: string[] = $state([]);
     let dorender: boolean = $state(false);

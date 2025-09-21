@@ -94,11 +94,6 @@
         if (program) {
           let hints: WindowHints | null = null;
 
-          if (uiSettings.isMobile) {
-            hints = { width: "100%", height: "100%" };
-            hints.maximized = true;
-          }
-
           program.windowHints = hints;
           openProgram(program);
         }
@@ -258,10 +253,12 @@
 
   onMount(() => {
     console.log("the component has mounted");
-    // todo
-    toOpen?.forEach((x) => {
-      openProgramByName(x.toLowerCase());
-    });
+
+    setTimeout(() => {
+      toOpen?.forEach((x) => {
+        openProgramByName(x.toLowerCase());
+      });
+    }, 1000);
   });
 </script>
 
