@@ -15,7 +15,7 @@
   import img_sum_mat from "./img/sum_matrix.png";
   import img_rook_situation from "./img/rook_situation.png";
   import img_masking from "./img/masking.gif";
-  import img_queen from "./img/queen_formular_mat.png";
+  import img_queen from "./img/queen_formula_mat.png";
   import img_game from "./img/game.png";
 </script>
 
@@ -100,7 +100,7 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
         <p>
           The second piece of information I yanked from Inkbox is that Excel updates its
           cells from the top left to the bottom right. A direct result of that
-          is that if you have a formular that references cells that are
+          is that if you have a formula that references cells that are
           updated later, the calculation may end up using outdated values. So,
           not only do the formulas themselves need to be correct, but the
           relative position of the cells also matters.
@@ -159,7 +159,7 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
           <br />
           I can already hear you asking, "BUT WHAT IS THE STATE IT’S KEEPING?"
           <br />
-          For that we have to extend the formular:
+          For that we have to extend the formula:
         </p>
         <figure>
           <pre>
