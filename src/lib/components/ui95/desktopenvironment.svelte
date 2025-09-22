@@ -19,6 +19,7 @@
     ["dot", "dottify"],
     ["mob", "mobilitymodels"],
     ["chx", "chexcel"],
+    ["pond", "thepond"],
   ]);
   const itemdataToProgramID = new Map<string, number>();
 
@@ -26,9 +27,10 @@
   import type { ItemData } from "$lib/types";
   import dottify_item from "../../experiments/dottify/item";
   import mobility_item from "../../experiments/mobility_models/item";
-  import chexcel_item from "../../experiments/chexcel/item";
   import cv_item from "../../experiments/cv/item";
   import scrum_item from "../../experiments/scrum/item";
+  import chexcel_item from "../../experiments/chexcel/item";
+  import thepond_item from "../../experiments/thepond/item";
 
   import error_item from "../ui95/errorMessage/item";
   let experiments: ItemData[] = [
@@ -37,6 +39,7 @@
     cv_item,
     scrum_item,
     chexcel_item,
+    thepond_item,
   ];
   // add to url mapping
   experiments.forEach((x) => urlMapping.set(x.id.toLowerCase(), x.id));
@@ -258,7 +261,7 @@
       toOpen?.forEach((x) => {
         openProgramByName(x.toLowerCase());
       });
-    }, 1000);
+    }, 1);
   });
 </script>
 
