@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import shaderCode from "./shaders/shaders.wgsl?raw";
+  import { TriangleMesh } from "./triangleMesh";
 
   let gpuAvailable: boolean = false;
 
@@ -21,12 +22,25 @@
     const format: GPUTextureFormat = "bgra8unorm";
     context.configure({ device: device, format: format, alphaMode: "opaque" });
 
+    const bindGroupLayout = device.createBindGroupLayout({ entries: [] });
+    const bindGroup = device.createBindGroup({
+      layout: bindGroupLayout,
+      entries: [],
+    });
+
+    const pipelineLayout = device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayout],
+    });
+
+    const triangleMesh: TriangleMesh = new TriangleMesh(device);
+
     const shaderModule = device.createShaderModule({ code: shaderCode });
     const pipelineDescriptor: GPURenderPipelineDescriptor = {
-      layout: "auto",
+      layout: pipelineLayout,
       vertex: {
         module: shaderModule,
         entryPoint: "vs_main",
+        buffers: [triangleMesh.bufferLayout],
       },
       fragment: {
         module: shaderModule,
@@ -61,6 +75,9 @@
     });
 
     renderpass.setPipeline(pipeline);
+    renderpass.setBindGroup(0, bindGroup);
+    renderpass.setVertexBuffer(0, triangleMesh.buffer);
+
     renderpass.draw(3, 1, 0, 0);
     renderpass.end();
     device.queue.submit([commandEncoder.finish()]);
