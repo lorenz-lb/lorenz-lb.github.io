@@ -83,7 +83,7 @@
       <div class="first-col">
         <span>09/2024</span>
         <span class="align-fix">-</span>
-        <span>heute</span>
+        <span>today</span>
       </div>
       <div class="second-col">
         <p class="main">Master of Science in Computer Science</p>
@@ -131,7 +131,11 @@
 
       <div class="first-col">Programming and <br />Query Languages</div>
       <div class="second-col main">
-        Python, C, C++, C#, Java, JavaScript, TypeScript,<br />SQL
+        <div>
+          Python, C, <span class="whitespace-nowrap"
+            >C<span class="relative -top-1">++</span></span
+          >, C#, Java, JavaScript, TypeScript,<br />SQL
+        </div>
       </div>
 
       <div class="first-col">Frameworks & Tools</div>
