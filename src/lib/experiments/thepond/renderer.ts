@@ -1,6 +1,10 @@
 import shaderCode from './shaders/shaders.wgsl?raw'
 import { TriangleMesh } from './triangleMesh';
 import { mat4 } from 'gl-matrix';
+import { Material } from "./material"
+
+// assets 
+import asset_fish_1 from "./assets/fish_m00.png"
 
 export class Renderer {
 
@@ -19,6 +23,7 @@ export class Renderer {
 
     // assests
     triangleMesh!: TriangleMesh;
+    material!: Material;
     t: number;
 
 
@@ -29,7 +34,8 @@ export class Renderer {
 
     async Initialize() {
         await this.setupDevice();
-        this.createAssets();
+        // determine layout => create before pipeline!
+        await this.createAssets();
         await this.makePipeline();
         this.render();
     }
@@ -54,6 +60,16 @@ export class Renderer {
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX,
                 buffer: { type: "uniform" }
+            },
+            {
+                binding: 1,
+                visibility: GPUShaderStage.FRAGMENT,
+                texture: {}
+            },
+            {
+                binding: 2,
+                visibility: GPUShaderStage.FRAGMENT,
+                sampler: {}
             }]
         });
 
@@ -65,7 +81,17 @@ export class Renderer {
                     resource: {
                         buffer: this.uniformBuffer
                     }
-                }],
+                },
+                {
+                    binding: 1,
+                    resource: this.material.view
+                },
+                {
+                    binding: 2,
+                    resource: this.material.sampler
+                },
+
+            ],
         });
 
 
@@ -101,8 +127,10 @@ export class Renderer {
 
     }
 
-    createAssets() {
+    async createAssets() {
         this.triangleMesh = new TriangleMesh(this.device);
+        this.material = new Material();
+        await this.material.init(this.device, asset_fish_1);
     }
 
     render() {
