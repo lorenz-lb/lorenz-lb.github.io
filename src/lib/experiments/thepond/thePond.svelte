@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { Renderer } from "./renderer";
+  import { App } from "./control/app";
 
   let gpuAvailable: boolean = false;
 
@@ -8,12 +8,16 @@
     gpuAvailable = true;
   }
 
-  let gfx_main: HTMLCanvasElement;
-  let renderer: Renderer;
+  let pond_canvas: HTMLCanvasElement;
+  let text_key: HTMLHeadElement;
+  let text_mouse_x: HTMLHeadElement;
+  let text_mouse_y: HTMLHeadElement;
+
+  let app: App;
 
   onMount(async () => {
-    renderer = new Renderer(gfx_main);
-    renderer.Initialize();
+    app = new App(pond_canvas, [text_key, text_mouse_x, text_mouse_y]);
+    app.initialize().then(() => app.run());
   });
 </script>
 
@@ -23,8 +27,25 @@
       <h2>WebGPU is not available, no fishing today :(</h2>
     {:else}
       <h2>Lets go fishing!</h2>
-      <canvas bind:this={gfx_main} id="gfx-main" width="800" height="600"
+      <canvas
+        bind:this={pond_canvas}
+        id="gfx-main"
+        width="800"
+        height="600"
+        tabindex="0"
       ></canvas>
+      <div class="flex space-x-10">
+        <p>Key:</p>
+        <p bind:this={text_key}></p>
+      </div>
+      <div class="flex space-x-10">
+        <p>Mouse X:</p>
+        <p bind:this={text_mouse_x}></p>
+      </div>
+      <div class="flex space-x-10">
+        <p>Mouse Y:</p>
+        <p bind:this={text_mouse_y}></p>
+      </div>
     {/if}
   </div>
 </main>
