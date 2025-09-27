@@ -43,7 +43,7 @@ export class App {
         this.scene.update();
         this.scene.move_player(this.forwards_amount, this.right_amount);
 
-        this.renderer.render(this.scene.get_player(), this.scene.get_triagles());
+        this.renderer.render(this.scene.get_player(), this.scene.get_triagles(), this.scene.triangleCount);
 
         if (running) {
             requestAnimationFrame(this.run);

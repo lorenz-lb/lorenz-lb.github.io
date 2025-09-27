@@ -27,6 +27,7 @@ export class Renderer {
     // assests
     triangleMesh!: TriangleMesh;
     material!: Material;
+    objectBuffer!: GPUBuffer;
 
 
     constructor(canvas: HTMLCanvasElement) {
@@ -53,7 +54,7 @@ export class Renderer {
 
     async makePipeline() {
 
-        this.uniformBuffer = this.device.createBuffer({ size: 64 * 3, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+        this.uniformBuffer = this.device.createBuffer({ size: 64 * 2, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
         const bindGroupLayout = this.device.createBindGroupLayout({
             entries: [{
@@ -70,7 +71,16 @@ export class Renderer {
                 binding: 2,
                 visibility: GPUShaderStage.FRAGMENT,
                 sampler: {}
-            }]
+            },
+            {
+                binding: 3,
+                visibility: GPUShaderStage.VERTEX,
+                buffer: {
+                    type: "read-only-storage",
+                    hasDynamicOffset: false
+                }
+            },
+            ]
         });
 
         this.bindGroup = this.device.createBindGroup({
@@ -90,7 +100,10 @@ export class Renderer {
                     binding: 2,
                     resource: this.material.sampler
                 },
-
+                {
+                    binding: 3,
+                    resource: this.objectBuffer,
+                },
             ],
         });
 
@@ -130,10 +143,18 @@ export class Renderer {
     async createAssets() {
         this.triangleMesh = new TriangleMesh(this.device);
         this.material = new Material();
+
+        // 1024 4x4 matrix
+        const modelBufferDescriptor: GPUBufferDescriptor = {
+            size: 64 * 1024,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        };
+        this.objectBuffer = this.device.createBuffer(modelBufferDescriptor);
+
         await this.material.init(this.device, asset_fish_1);
     }
 
-    async render(camera: Camera, triangles: Triangle[]) {
+    async render(camera: Camera, triangles: Float32Array, triangleCount: number) {
         // crate mat4
         const projection = mat4.create();
         mat4.perspective(projection, Math.PI / 4, 800 / 600, 0.1, 10);
@@ -141,8 +162,9 @@ export class Renderer {
         const view = camera.get_view();
 
 
-        this.device.queue.writeBuffer(this.uniformBuffer, 64, <ArrayBuffer><unknown>view);
-        this.device.queue.writeBuffer(this.uniformBuffer, 128, <ArrayBuffer><unknown>projection);
+        this.device.queue.writeBuffer(this.objectBuffer, 0, triangles, 0, triangles.length);
+        this.device.queue.writeBuffer(this.uniformBuffer, 0, <ArrayBuffer><unknown>view);
+        this.device.queue.writeBuffer(this.uniformBuffer, 64, <ArrayBuffer><unknown>projection);
 
         const commandEncoder: GPUCommandEncoder = this.device.createCommandEncoder();
         const textureView: GPUTextureView = this.context
@@ -162,14 +184,9 @@ export class Renderer {
         renderpass.setPipeline(this.pipeline);
         renderpass.setVertexBuffer(0, this.triangleMesh.buffer);
 
-        triangles.forEach((triangle) => {
-            const model = triangle.get_model();
-            this.device.queue.writeBuffer(this.uniformBuffer, 0, <ArrayBuffer><unknown>model);
-            renderpass.setBindGroup(0, this.bindGroup);
-            renderpass.draw(3, 1, 0, 0);
-        });
-
         renderpass.setBindGroup(0, this.bindGroup);
+        renderpass.draw(3, triangleCount, 0, 0);
+
         renderpass.end();
 
         this.device.queue.submit([commandEncoder.finish()]);
