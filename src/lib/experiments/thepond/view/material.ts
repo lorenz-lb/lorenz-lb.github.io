@@ -1,10 +1,10 @@
 export class Material {
-
     texture!: GPUTexture
     view!: GPUTextureView
     sampler!: GPUSampler
+    bindGroup!: GPUBindGroup
 
-    async init(device: GPUDevice, url: string) {
+    async init(device: GPUDevice, url: string, bindGroupLayout: GPUBindGroupLayout) {
         // get image
         console.log(url)
 
@@ -37,6 +37,20 @@ export class Material {
         }
 
         this.sampler = device.createSampler(samplerDescriptor);
+
+        this.bindGroup = device.createBindGroup({
+            layout: bindGroupLayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.view
+                },
+                {
+                    binding: 1,
+                    resource: this.sampler
+                },
+            ],
+        });
     }
 
     async loadImageBitmap(device: GPUDevice, imageData: ImageBitmap) {
