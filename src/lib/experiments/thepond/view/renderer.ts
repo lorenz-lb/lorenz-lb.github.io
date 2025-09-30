@@ -3,12 +3,13 @@ import { TriangleMesh } from './triangleMesh';
 import { QuadMesh } from './quadMesh';
 import { mat4 } from 'gl-matrix';
 import { Material } from "./material"
-
 import { ObjectTypes, type RenderData } from '../model/definitions';
+import { ObjMesh } from './objMesh';
 
 // assets 
 import asset_fish_1 from "../assets/fish_m00.png"
 import asset_fish_2 from "../assets/fish_m02.png"
+import asset_ground from "../assets/statue.obj?url"
 
 export class Renderer {
 
@@ -37,6 +38,7 @@ export class Renderer {
     // assests
     triangleMesh!: TriangleMesh;
     quadMesh!: QuadMesh;
+    statueMesh!: ObjMesh;
     triangleMaterial!: Material;
     quadMaterial!: Material;
     objectBuffer!: GPUBuffer;
@@ -184,6 +186,9 @@ export class Renderer {
     async createAssets() {
         this.triangleMesh = new TriangleMesh(this.device);
         this.quadMesh = new QuadMesh(this.device);
+        this.statueMesh = new ObjMesh();
+        await this.statueMesh.initialize(this.device, asset_ground);
+
         this.triangleMaterial = new Material();
         this.quadMaterial = new Material();
 
@@ -258,6 +263,13 @@ export class Renderer {
         renderpass.setBindGroup(1, this.quadMaterial.bindGroup);
         renderpass.draw(6, renderables.objectsCount[ObjectTypes.QUAD], 0, objectsDrawn);
         objectsDrawn += renderables.objectsCount[ObjectTypes.QUAD];
+
+        // statue
+        renderpass.setVertexBuffer(0, this.statueMesh.buffer);
+        renderpass.setBindGroup(1, this.triangleMaterial.bindGroup);
+        renderpass.draw(this.statueMesh.vertexCount, 1, 0, objectsDrawn);
+        objectsDrawn += 1;
+
 
         renderpass.end();
 
