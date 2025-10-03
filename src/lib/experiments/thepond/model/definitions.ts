@@ -5,8 +5,14 @@ export enum ObjectTypes {
     QUAD
 }
 
+export enum PipelineTypes {
+    STANDARD,
+    SKY
+}
+
 export interface RenderData {
     viewTransform: mat4;
     modelTransforms: Float32Array;
     objectsCount: { [obj in ObjectTypes]: number }
 }
+
