@@ -17,7 +17,8 @@
 
   onMount(async () => {
     app = new App(pond_canvas, [text_key, text_mouse_x, text_mouse_y]);
-    app.initialize().then(() => app.run());
+    app.startApp();
+    //app.initialize().then(() => app.run());
   });
 </script>
 

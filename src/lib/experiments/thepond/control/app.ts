@@ -1,6 +1,8 @@
 import { Renderer } from "../view/renderer"
 import { Scene } from "../model/scene"
 
+import { ECSApp } from "./appECS";
+
 export class App {
     canvas: HTMLCanvasElement;
     renderer: Renderer;
@@ -12,6 +14,17 @@ export class App {
 
     forwards_amount!: number;
     right_amount!: number;
+
+
+    // --- APP START ---
+    async startApp() {
+        const app = new ECSApp(this.canvas);
+
+        if (await app.initialize()) {
+            requestAnimationFrame(app.run);
+        }
+    }
+
 
 
     constructor(canvas: HTMLCanvasElement, lables: HTMLElement[]) {
@@ -49,6 +62,11 @@ export class App {
             requestAnimationFrame(this.run);
         }
     }
+
+
+
+
+
 
     handle_keydown(event: KeyboardEvent) {
         this.keyLable.innerHTML = event.key;
