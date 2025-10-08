@@ -1,19 +1,132 @@
-export class Material {
+import { vec3 } from "gl-matrix"
+
+/**
+ * Material Properties like 
+ */
+export interface MaterialProperies {
+    name: string;
+    /** base color */
+    kd: vec3;
+    /** texture */
+    map_kd: string;
+    /** specular color */
+    ks?: vec3;
+    /** ambient color */
+    ka?: vec3;
+    /** specular exponent */
+    ns?: number;
+    /** transparency */
+    d?: number;
+    /** illumination */
+    illum?: number;
+
+
+    // // physics based
+    // /** roughness */
+    // pr?: number;
+    // /** metallic */
+    // pm?: number;
+    // /** sheen */
+    // ps?: number;
+    // /** clearcoat thickness */
+    // pc?: number;
+    // /** clearcoat roughness */
+    // pcr?: number;
+    // /** emissive */
+    // ke?: number;
+    // /** Normal Map Path*/
+    // norm?: string;
+}
+
+/**
+ * This class represents a GPU material.
+ * It contains material properties such as reflection strenght, base color etc.
+ * It also contains the GPU ressources needed to dispatch the material to the GPU to be used in a shader
+ * Thus this class abstracts all material apects needed to perform computation within webgpu
+ */
+export class Material implements MaterialProperies {
+    // Material Props 
+    name!: string;
+    kd!: vec3;
+    map_kd!: string;
+    ks!: vec3;
+    ka!: vec3;
+    ns!: number;
+    d!: number;
+    illum!: number;
+
+    // GPU Props
+    device!: GPUDevice
     texture!: GPUTexture
     view!: GPUTextureView
     sampler!: GPUSampler
-    bindGroup!: GPUBindGroup
+    textureBindGroup!: GPUBindGroup
+    constantsBuffer!: GPUBuffer;
+    constantsBindGroup!: GPUBindGroup;
 
-    async init(device: GPUDevice, url: string, bindGroupLayout: GPUBindGroupLayout) {
-        // get image
-        console.log(url)
+    public async init(device: GPUDevice,
+        materialData: MaterialProperies,
+        textureLayout: GPUBindGroupLayout,
+        constantsLayout: GPUBindGroupLayout) {
 
-        const response: Response = await fetch(url);
-        const blob: Blob = await response.blob();
-        const imageData: ImageBitmap = await createImageBitmap(blob);
+        this.name = materialData.name;
+        this.map_kd = materialData.map_kd;
+        this.kd = materialData.kd;
 
+        this.ks = materialData.ks ?? vec3.create();
+        this.ka = materialData.ka ?? vec3.create();
+        this.ns = materialData.ns ?? 0;
+        this.d = materialData.ns ?? 0;
+        this.illum = materialData.illum ?? 0;
 
-        await this.loadImageBitmap(device, imageData);
+        this.createConstantGroup(device, constantsLayout);
+        await this.createTextureGroup(device, textureLayout);
+    }
+
+    private createConstantGroup(device: GPUDevice, layout: GPUBindGroupLayout) {
+        const constantsData = new Float32Array([
+            this.kd[0], this.kd[1], this.kd[2], 1.0
+        ]);
+
+        this.constantsBuffer = device.createBuffer({
+            size: constantsData.byteLength,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            label: `Material ${this.name} ConstBuffer`
+        });
+
+        device.queue.writeBuffer(this.constantsBuffer, 0, constantsData);
+
+        this.constantsBindGroup = device.createBindGroup({
+            layout: layout,
+            entries: [{ binding: 0, resource: { buffer: this.constantsBuffer } }],
+            label: `${this.name}_constants`
+        });
+    }
+
+    private async createTextureGroup(device: GPUDevice, layout: GPUBindGroupLayout) {
+        let textureToUse: GPUTexture;
+        // let viewToUse: GPUTextureView;
+        // let samplerToUse: GPUSampler;
+
+        if (this.map_kd) {
+            const response: Response = await fetch(this.map_kd);
+            const blob: Blob = await response.blob();
+            const imageData: ImageBitmap = await createImageBitmap(blob);
+            await this.loadImageBitmap(device, imageData);
+            textureToUse = this.texture;
+        }
+        else {
+            // FALLBACK: 1x1 white texture  
+            const whiteTexture = device.createTexture({
+                size: [1, 1],
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+            });
+            const whiteData = new Uint8Array([255, 255, 255, 255]);
+            device.queue.writeTexture({ texture: whiteTexture }, whiteData, { bytesPerRow: 4 }, [1, 1]);
+
+            textureToUse = whiteTexture;
+        }
 
         const viewDescriptor: GPUTextureViewDescriptor = {
             format: "rgba8unorm",
@@ -25,8 +138,6 @@ export class Material {
             arrayLayerCount: 1
         };
 
-        this.view = this.texture.createView(viewDescriptor);
-
         const samplerDescriptor: GPUSamplerDescriptor = {
             addressModeU: "repeat",
             addressModeV: "repeat",
@@ -36,10 +147,11 @@ export class Material {
             maxAnisotropy: 1,
         }
 
+        this.view = textureToUse.createView(viewDescriptor);
         this.sampler = device.createSampler(samplerDescriptor);
 
-        this.bindGroup = device.createBindGroup({
-            layout: bindGroupLayout,
+        this.textureBindGroup = device.createBindGroup({
+            layout: layout,
             entries: [
                 {
                     binding: 0,
@@ -50,10 +162,11 @@ export class Material {
                     resource: this.sampler
                 },
             ],
+            label: `${this.name}_textures`
         });
     }
 
-    async loadImageBitmap(device: GPUDevice, imageData: ImageBitmap) {
+    private async loadImageBitmap(device: GPUDevice, imageData: ImageBitmap) {
         const textureDescriptor: GPUTextureDescriptor = {
             size: {
                 width: imageData.width,
@@ -70,7 +183,4 @@ export class Material {
             { texture: this.texture },
             textureDescriptor.size);
     }
-
-
-
 }
