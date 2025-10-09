@@ -63,11 +63,13 @@ export class Material implements MaterialProperies {
     textureBindGroup!: GPUBindGroup
     constantsBuffer!: GPUBuffer;
     constantsBindGroup!: GPUBindGroup;
+    pipeline!: GPURenderPipeline;
 
     public async init(device: GPUDevice,
         materialData: MaterialProperies,
         textureLayout: GPUBindGroupLayout,
-        constantsLayout: GPUBindGroupLayout) {
+        constantsLayout: GPUBindGroupLayout,
+        pipeline: GPURenderPipeline) {
 
         this.name = materialData.name;
         this.map_kd = materialData.map_kd;
@@ -79,14 +81,23 @@ export class Material implements MaterialProperies {
         this.d = materialData.ns ?? 0;
         this.illum = materialData.illum ?? 0;
 
+        this.pipeline = pipeline;
         this.createConstantGroup(device, constantsLayout);
         await this.createTextureGroup(device, textureLayout);
     }
 
     private createConstantGroup(device: GPUDevice, layout: GPUBindGroupLayout) {
         const constantsData = new Float32Array([
-            this.kd[0], this.kd[1], this.kd[2], 1.0
+            // Diffuse Color
+            this.kd[0], this.kd[1], this.kd[2], 1.0,
+            // Specular Color
+            this.ks[0], this.ks[1], this.ks[2], 1.0,
+            // Ambient Color
+            this.ka[0], this.ka[1], this.ka[2], 1.0,
+            // shininess, alpha, illumination, padding
+            this.ns, this.d, this.illum, 0.0,
         ]);
+
 
         this.constantsBuffer = device.createBuffer({
             size: constantsData.byteLength,

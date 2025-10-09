@@ -168,9 +168,12 @@ export class OBJParser {
 
 export class MTLParser {
     static async readMTLFile(url: string): Promise<{ [name: string]: MTLData }> {
+        const basePath = url.replace(/\\/g, '/').substring(0, url.lastIndexOf('/') + 1);
+
         const response: Response = await fetch(url);
         const fileContents: string = (await response.text());
         const lines = fileContents.split("\n");
+
 
         let materials: { [name: string]: MTLData } = {};
         let currentMaterial: Partial<MTLData> | null = null;
@@ -186,8 +189,8 @@ export class MTLParser {
                 // 1. Altes Material abschließen
                 if (currentMaterial && currentMaterial.name) {
                     currentMaterial.kd = currentMaterial.kd || defaultKd;
-                    currentMaterial.map_kd = currentMaterial.map_kd || '';
-                    currentMaterial.map_bump = currentMaterial.map_bump || '';
+                    currentMaterial.map_kd = currentMaterial.map_kd ? basePath + currentMaterial.map_kd : '';
+                    currentMaterial.map_bump = currentMaterial.map_bump ? basePath + currentMaterial.map_bump : '';
 
                     materials[currentMaterial.name] = currentMaterial as MTLData;
                 }
@@ -217,8 +220,8 @@ export class MTLParser {
         // 4. Das allerletzte Material abschließen
         if (currentMaterial && currentMaterial.name) {
             currentMaterial.kd = currentMaterial.kd || defaultKd;
-            currentMaterial.map_kd = currentMaterial.map_kd || '';
-            currentMaterial.map_bump = currentMaterial.map_bump || '';
+            currentMaterial.map_kd = currentMaterial.map_kd ? basePath + currentMaterial.map_kd : '';
+            currentMaterial.map_bump = currentMaterial.map_bump ? basePath + currentMaterial.map_bump : '';
 
             materials[currentMaterial.name] = currentMaterial as MTLData;
         }

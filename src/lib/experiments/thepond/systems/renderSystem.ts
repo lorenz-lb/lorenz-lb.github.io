@@ -39,6 +39,7 @@ export class RenderSystem implements System {
             passEncoder.setPipeline(batch.pipeline);
             passEncoder.setBindGroup(0, this.globalBindGroup);
             passEncoder.setBindGroup(1, batch.textureBindGroup);
+            passEncoder.setBindGroup(2, batch.constantsBindGroup);
             passEncoder.setVertexBuffer(0, batch.meshBuffer);
             passEncoder.setVertexBuffer(1, instanceBuffer);
 

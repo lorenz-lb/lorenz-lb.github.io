@@ -1,10 +1,27 @@
 
+// WGSL Shader Code
+struct MaterialConstants {
+    kdColor: vec4f,
+    ksColor: vec4f,
+    kaColor: vec4f,
+    nsValue: f32,
+    dValue: f32,
+    illumModel: f32,
+    // padding do not use
+    PADDING: f32
+};
+
+
 struct Uniforms {
     viewProjectionMatrix: mat4x4<f32>,
 };
-        @binding(0) @group(0) var<uniform> uniforms : Uniforms;
-        @group(1) @binding(0) var textureData: texture_2d<f32>; 
-        @group(1) @binding(1) var textureSampler: sampler;
+
+@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+@binding(0) @group(1)  var textureData: texture_2d<f32>; 
+@binding(1) @group(1) var textureSampler: sampler;
+@binding(0) @group(2) var<uniform> materialUniforms : MaterialConstants; 
+
+
         
 struct VertexInput {
     @location(0) position: vec4f,
@@ -22,7 +39,7 @@ struct VertexOutput {
     @location(1) lighting_intensity: f32,
 };
 
-        @vertex
+@vertex
 fn vs_main(input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     let modelMatrix = mat4x4<f32>(
@@ -34,10 +51,11 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 
     let lightDirection: vec3f = normalize(vec3f(0.5, -0.5, -1.0));
     output.position = uniforms.viewProjectionMatrix * modelMatrix * input.position;
-    output.uv = input.uv;
+    // inverse v 
+    output.uv = vec2f(input.uv.x, 1 - input.uv.y);
     let worldNormal = normalize((modelMatrix * input.normal).xyz);
     let L: vec3f = -lightDirection;
-    let diffuseIntensity = max(dot(worldNormal, L), 0.0);
+    let diffuseIntensity = max(dot(worldNormal, L), 0.5);
 
     output.lighting_intensity = diffuseIntensity;
 
@@ -47,16 +65,6 @@ fn vs_main(input: VertexInput) -> VertexOutput {
      @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4f {
     var texcolor = textureSample(textureData, textureSampler, input.uv);
-
-    var result = vec4<f32>(1.0, 1.0, 1.0, 1.0);
-    //result = vec4<f32>(input.normal, 1.0);
-
-    // flat shading
-    let ambientColor: vec3f = vec3f(0.1, 0.1, 0.1); // Dunkleres Basislicht
-    let diffuseColor: vec3f = vec3f(0.9, 0.9, 0.9); // Farbe des Lichts
-
-    let lighting = ambientColor + diffuseColor * input.lighting_intensity;
-
-
-    return vec4f(texcolor.rgb * lighting, texcolor.a);
+    //return vec4f(finalColor.rgb, 1.0);
+    return vec4f(1.0, 0.0, 1.0, 1.0);
 }

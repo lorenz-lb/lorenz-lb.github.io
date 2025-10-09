@@ -1,5 +1,5 @@
 import { type TransformComponent } from '../components/transformComponent';
-import { type RenderComponent } from '../components/renderComponent';
+import { type MeshRenderComponent } from '../components/meshRenderComponent';
 import { mat4 } from 'gl-matrix';
 import { Deg2Rad } from '../model/math_stuff';
 import type { System } from './system';
@@ -26,16 +26,16 @@ export class MatrixUpdateSystem implements System {
 
     public update(
         transforms: Map<number, TransformComponent>,
-        renderData: Map<number, RenderComponent>
+        renderData: Map<number, MeshRenderComponent>
     ): { buffer: GPUBuffer, batches: Map<string, RenderBatch> } {
 
         // batching and sorting
-        const entityList: { id: number, key: string, transform: TransformComponent, render: RenderComponent }[] = [];
+        const entityList: { id: number, key: string, transform: TransformComponent, render: MeshRenderComponent }[] = [];
         for (const [entityId, render] of renderData.entries()) {
             const transform = transforms.get(entityId);
             if (!transform) continue; // Entität muss Transform und RenderData haben
 
-            const batchKey = `${render.pipeline.label}_${render.meshVAO.label}_${render.textureBindGroup.label}`;
+            const batchKey = `${render.material.pipeline.label}_${render.meshVAO.label}_${render.material.textureBindGroup.label}`;
 
             entityList.push({ id: entityId, key: batchKey, transform, render });
         }
@@ -51,10 +51,13 @@ export class MatrixUpdateSystem implements System {
             // ##### change batch
             if (entity.key !== lastBatchKey) {
                 currentBatches.set(entity.key, {
-                    pipeline: entity.render.pipeline,
+                    pipeline: entity.render.material.pipeline,
+                    textureBindGroup: entity.render.material.textureBindGroup,
+                    constantsBindGroup: entity.render.material.constantsBindGroup,
+
                     meshBuffer: entity.render.meshVAO,
-                    textureBindGroup: entity.render.textureBindGroup,
                     vertexCount: entity.render.vertexCount,
+
                     instanceCount: 0,
                     instanceOffset: matrixOffsetIndex
                 } as RenderBatch);
