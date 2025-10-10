@@ -143,7 +143,7 @@ export class OBJParser {
         result.push(vt[0], vt[1]);
     }
 
-    static async createMesh(device: GPUDevice, url: string, label: string = "Obj-Mesh")
+    static async createMesh(device: GPUDevice, url: string, label: string)
         : Promise<{ buffer: GPUBuffer, count: number, groups: Array<{ materialName: string, startIndex: number, count: number }> }> {
         let objData = await OBJParser.readOBJFile(url);
 

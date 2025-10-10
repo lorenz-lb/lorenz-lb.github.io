@@ -1,6 +1,8 @@
 import { vec3 } from "gl-matrix"
 
-export class TransformComponent {
+import { type Component } from "./component";
+
+export class TransformComponent implements Component {
     position: vec3;
     eulers: vec3;
     scale: vec3;
