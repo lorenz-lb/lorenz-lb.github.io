@@ -89,6 +89,19 @@
 
   }
 
+  .ui95-textinput {
+    border: black var(--border-winwidth) solid;
+    border-bottom-color: white;
+    border-right-color: white;
+    border-top-color: black;
+    border-left-color: black;
+    background: white;
+
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+  }
+
   .taskbarbutton {
     background-color: var(--color-winlightgray-500);
   }

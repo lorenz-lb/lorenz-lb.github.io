@@ -6,7 +6,7 @@ import { type ItemData, FileType } from "$lib/types";
 export default {
     id: "CV",
     image: thumb,
-    title: 'CV',
+    title: 'CV.txt',
     subtitle: "",
     tags: [].toSorted(),
     link: `${base}/experiments/cv`,

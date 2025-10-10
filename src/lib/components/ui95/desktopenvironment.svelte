@@ -31,6 +31,7 @@
   import scrum_item from "../../experiments/scrum/item";
   import chexcel_item from "../../experiments/chexcel/item";
   import thepond_item from "../../experiments/thepond/item";
+  import fontAtlas_item from "../../experiments/fontAtlas/item";
 
   import error_item from "../ui95/errorMessage/item";
   let experiments: ItemData[] = [
@@ -40,6 +41,7 @@
     scrum_item,
     chexcel_item,
     thepond_item,
+    fontAtlas_item,
   ];
   // add to url mapping
   experiments.forEach((x) => urlMapping.set(x.id.toLowerCase(), x.id));

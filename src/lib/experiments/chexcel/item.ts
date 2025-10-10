@@ -6,7 +6,7 @@ import { type ItemData, FileType } from "$lib/types";
 export default {
     id: "CHEXCEL",
     image: thumb,
-    title: "Chexcel",
+    title: "Chexcel.txt",
     subtitle: "The route to (almost) chess in Excel",
     tags: ["Excel"].toSorted(),
     link: `${base}/experiments/chexcel`,
