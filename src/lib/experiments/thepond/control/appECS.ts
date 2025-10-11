@@ -1,4 +1,4 @@
-import { vec3, mat4 } from "gl-matrix";
+import { vec2, vec3, mat4 } from "gl-matrix";
 import { EntityManager } from "./entityManager";
 import type { System } from "../systems/system";
 import { MatrixUpdateSystem } from "../systems/matrixUpdateSystem";
@@ -29,6 +29,9 @@ import { FreeCamSystem } from "../systems/freeCamSystem";
 import { InputManager } from "./inputManager";
 import { FreeCamComponent } from "../components/freeCamComponent";
 import { CameraSystem } from "../systems/cameraSystem";
+import { TextComponent } from "../components/textComponent";
+import { TextMeshGeneratorSystem } from "../systems/textMeshGeneratorSystem";
+import { HUDRenderSystem } from "../systems/uiRenderSystem";
 
 export class ECSApp {
     private canvas: HTMLCanvasElement;
@@ -60,7 +63,9 @@ export class ECSApp {
     private matrixUpdateSystem!: MatrixUpdateSystem;
     private renderSystem!: RenderSystem;
     private freeCamSystem!: FreeCamSystem;
-    private cameraSystem!: CameraSystem;
+    private textMeshGeneratorSystem!: TextMeshGeneratorSystem;
+    private hudRendersystem!: HUDRenderSystem;
+
     // Entity 
     private camera!: number;
     private blaster!: number;
@@ -194,9 +199,11 @@ export class ECSApp {
     async initECS() {
         // d) ECS System Initialisierung
         this.matrixUpdateSystem = new MatrixUpdateSystem(this.device);
-        this.renderSystem = new RenderSystem(this.device, this.context, this.globalBindGroup);
+        this.renderSystem = new RenderSystem(this.device, this.globalBindGroup);
         this.freeCamSystem = new FreeCamSystem(this.inputManager);
-        this.cameraSystem = new CameraSystem(this.inputManager);
+        this.hudRendersystem = new HUDRenderSystem(this.device, this.canvas);
+        await this.hudRendersystem.init();
+        this.textMeshGeneratorSystem = new TextMeshGeneratorSystem(this.device);
 
         // e) Entitäten erstellen
         await this.createEntities();
@@ -231,6 +238,10 @@ export class ECSApp {
             staueMesh.buffer,
             staueMesh.count
         ));
+
+        let text = this.entityManager.createEntity();
+
+        this.entityManager.addComponent(text, new TextComponent("Hello World", vec2.fromValues(0.0, 0.0), "myatas"));
     }
 
 
@@ -244,6 +255,9 @@ export class ECSApp {
         const renderComponents = this.entityManager.getComponents(MeshRenderComponent);
         const cameraComponents = this.entityManager.getComponents(CameraComponent);
         const freeCamComponents = this.entityManager.getComponents(FreeCamComponent);
+        const textComponents = this.entityManager.getComponents(TextComponent);
+
+
         const cameraComponent = cameraComponents.get(this.camera)!;
         const cameraTransform = transformComponents.get(this.camera)!;
         const blasterTransform = transformComponents.get(this.blaster)!;
@@ -254,6 +268,12 @@ export class ECSApp {
         // ############### Movement
         //this.cameraSystem.update(cameraComponents, transformComponents);
         this.freeCamSystem.update(freeCamComponents, cameraComponents, transformComponents, dt);
+
+
+        // ############### TextMesh Creation
+        this.textMeshGeneratorSystem.update(textComponents);
+
+
 
 
         // ############### Global Uniforms 
@@ -278,7 +298,10 @@ export class ECSApp {
 
         // render 1. create all matrx 2. render
         const { buffer, batches } = this.matrixUpdateSystem.update(transformComponents, renderComponents);
-        this.renderSystem.update(buffer, batches, this.depthStencilAttachment);
+        const currentTextureView = this.context.getCurrentTexture().createView();
+
+        this.renderSystem.update(buffer, batches, this.depthStencilAttachment, currentTextureView);
+        this.hudRendersystem.update(textComponents, this.depthStencilAttachment, currentTextureView)
 
         requestAnimationFrame(this.run);
     }

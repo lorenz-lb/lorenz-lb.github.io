@@ -5,20 +5,19 @@ import type { System } from "./system";
 export class RenderSystem implements System {
 
     private device: GPUDevice;
-    private context: GPUCanvasContext;
     private globalBindGroup: GPUBindGroup;
 
-    constructor(device: GPUDevice, context: GPUCanvasContext, globalBindGroup: GPUBindGroup) {
+    constructor(device: GPUDevice, globalBindGroup: GPUBindGroup) {
         this.device = device;
-        this.context = context;
         this.globalBindGroup = globalBindGroup;
     }
 
-    update(instanceBuffer: GPUBuffer, batches: Map<string, RenderBatch>, depthStencilAttachment: GPURenderPassDepthStencilAttachment
+    update(instanceBuffer: GPUBuffer, batches: Map<string, RenderBatch>, depthStencilAttachment: GPURenderPassDepthStencilAttachment,
+        textureView: GPUTextureView
+
     ): void {
 
         const commandEncoder = this.device.createCommandEncoder();
-        const textureView = this.context.getCurrentTexture().createView();
 
         // renderpass
         const renderPassDescriptor: GPURenderPassDescriptor = {

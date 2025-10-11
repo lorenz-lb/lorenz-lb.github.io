@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Desktop from "$lib/components/ui95/desktop.svelte";
+
   let width: number = 32;
   let fontFamily: string = "Arial, sans-serif";
   let characters: string =
@@ -6,6 +8,15 @@
 
   let canvasElement: HTMLCanvasElement;
   let atlasImageUrl: string = "";
+  let metadataSting: string = "";
+
+  interface AtlasMetaData {
+    char: string;
+    uv: [number, number, number, number];
+    width: number;
+    height: number;
+    advance: number;
+  }
 
   function generateFontAtlas() {
     if (!canvasElement) return;
@@ -19,6 +30,8 @@
 
     const canvasWidth = cols * charSize;
     const canvasHeight = rows * charSize;
+
+    let metaData: AtlasMetaData[] = [];
 
     canvasElement.width = canvasWidth;
     canvasElement.height = canvasHeight;
@@ -36,13 +49,35 @@
       const col = i % cols;
       const row = Math.floor(i / cols);
 
-      const x = col * charSize + charSize / 2;
-      const y = row * charSize + charSize / 2;
+      const pixelX_start = col * charSize;
+      const pixelY_start = row * charSize;
+      const drawX = pixelX_start + charSize / 2;
+      const drawY = pixelY_start + charSize / 2;
 
-      ctx.fillText(char, x, y);
+      ctx.fillText(char, drawX, drawY);
+
+      const Ustart = pixelX_start / canvasWidth;
+      const Vstart = pixelY_start / canvasHeight;
+      const Uend = (pixelX_start + charSize) / canvasWidth;
+      const Vend = (pixelY_start + charSize) / canvasHeight;
+
+      const char_width = charSize;
+      const char_height = charSize;
+      const char_advance = charSize;
+
+      let data: AtlasMetaData = {
+        char: char,
+        uv: [Ustart, Vstart, Uend, Vend],
+        width: char_width,
+        height: char_height,
+        advance: char_advance,
+      };
+
+      metaData.push(data);
     }
 
     atlasImageUrl = canvasElement.toDataURL("image/png");
+    metadataSting = JSON.stringify(metaData);
   }
 
   function downloadAtlas() {
@@ -61,7 +96,7 @@
 </script>
 
 <main class="flex mx-[1px]">
-  <div class="min-h-screen p-8 space-y-10 overflow-hidden">
+  <div class="min-h-screen p-8 space-y-10 overflow-hidden w-full">
     <div class="space-y-10">
       <h1 class="text-3xl font-bold text-center mb-8">Font Atlas Creator</h1>
       <section>
@@ -117,30 +152,48 @@
         </div>
       </section>
 
-      <section class="space-y-4 flex-col">
+      <section class="space-y-4 flex-col w-full">
         <h2 class="text-xl">Generate & Preview</h2>
 
-        <button on:click={generateFontAtlas} class="button3d p-3">
-          <div>Generate Font Atlas</div>
-        </button>
+        <div>
+          <button on:click={generateFontAtlas} class="button3d p-3">
+            <div>Generate Font Atlas</div>
+          </button>
+
+          {#if atlasImageUrl}
+            <button on:click={downloadAtlas} class=" button3d p-3 mt-2">
+              <div>Download Atlas (PNG)</div></button
+            >
+
+            <button
+              on:click={() => navigator.clipboard.writeText(metadataSting)}
+              class="button3d p-3 mt-2"
+            >
+              <div>Copy Text to Clipboard</div></button
+            >
+          {/if}
+        </div>
 
         <canvas bind:this={canvasElement} class="hidden"></canvas>
 
         {#if atlasImageUrl}
-          <h3 class="font-medium mt-4">Preview:</h3>
-          <img
-            src={atlasImageUrl}
-            alt="Generated Font Atlas"
-            class="ui95-inset-panel p-2 image-rendering-pixelated"
-            style="border: 2px solid #ccc; max-width: 100%; height: auto;"
-          />
-
-          <button on:click={downloadAtlas} class="button3d p-3 mt-2">
+          <div class="flex w-full">
             <div>
-              Download Atlas (PNG)
-              <div></div>
-            </div></button
-          >
+              <h3 class="font-medium mt-4">Preview:</h3>
+              <img
+                src={atlasImageUrl}
+                alt="Generated Font Atlas"
+                class="ui95-inset-panel p-2 image-rendering-pixelated"
+                style="border: 2px solid #ccc; max-width: 100%; height: auto;"
+              />
+            </div>
+            <div class="w-full m-10">
+              <textarea
+                class="ui95-textinput w-full h-full"
+                bind:value={metadataSting}
+              ></textarea>
+            </div>
+          </div>
         {:else}
           <p>Click "Generate Font Atlas" to generate your atlas</p>
         {/if}
