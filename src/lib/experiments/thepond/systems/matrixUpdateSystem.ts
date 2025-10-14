@@ -72,7 +72,7 @@ export class MatrixUpdateSystem implements System {
             mat4.rotateZ(modelMatrix, modelMatrix, Deg2Rad(entity.transform.eulers[2]));
 
             // todo Scale
-            // mat4.scale(modelMatrix, modelMatrix, transform.scale);
+            mat4.scale(modelMatrix, modelMatrix, entity.transform.scale); 
 
             this.instanceMatrixArray.set(modelMatrix, matrixOffsetIndex * 16);
 

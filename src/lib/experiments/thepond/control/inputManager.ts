@@ -1,19 +1,31 @@
+export enum KeyPress {
+    None = "NONE",
+    Down = "DOWN",
+    Held = "HELD",
+    Up = "UP",
+}
+
 export class InputManager {
     private canvas: HTMLCanvasElement;
 
     // keyboard
-    w: boolean = false;
-    a: boolean = false;
-    s: boolean = false;
-    d: boolean = false;
-    q: boolean = false;
-    e: boolean = false;
+    w: KeyPress = KeyPress.None;
+    a: KeyPress = KeyPress.None;
+    s: KeyPress = KeyPress.None;
+    d: KeyPress = KeyPress.None;
+    q: KeyPress = KeyPress.None;
+    e: KeyPress = KeyPress.None;
+    f: KeyPress = KeyPress.None;
 
     // mouse
-    primary: boolean = false;
-    secondary: boolean = false;
+    primary: KeyPress = KeyPress.None;
+    secondary: KeyPress = KeyPress.None;
     movementX: number = 0;
     movementY: number = 0;
+
+
+    // indexing 
+    [key: string]: KeyPress | any;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -29,33 +41,33 @@ export class InputManager {
     }
 
     private keyDown(event: KeyboardEvent) {
-        if (event.key == 'w' || event.key == 'W') { this.w = true; }
-        else if (event.key == 'a' || event.key == 'A') { this.a = true; }
-        else if (event.key == 's' || event.key == 'S') { this.s = true; }
-        else if (event.key == 'd' || event.key == 'D') { this.d = true; }
-        else if (event.key == 'q' || event.key == 'Q') { this.q = true; }
-        else if (event.key == 'e' || event.key == 'E') { this.e = true; }
+        const key = event.key.toLowerCase();
 
-        console.log(`down: \t ${event.key} \t ${this.w} `)
+        if (this[key] !== undefined && this[key] != KeyPress.Held) {
+            this[key] = KeyPress.Down;
+        }
+
+        console.log(`DOWN: \t ${event.key} `)
     }
 
     private keyUp(event: KeyboardEvent) {
-        if (event.key == 'w' || event.key == 'W') { this.w = false; }
-        else if (event.key == 'a' || event.key == 'A') { this.a = false; }
-        else if (event.key == 's' || event.key == 'S') { this.s = false; }
-        else if (event.key == 'd' || event.key == 'D') { this.d = false; }
-        else if (event.key == 'q' || event.key == 'Q') { this.q = false; }
-        else if (event.key == 'e' || event.key == 'E') { this.e = false; }
+        const key = event.key.toLowerCase();
+
+        if (this[key] !== undefined) {
+            this[key] = KeyPress.Up;
+        }
+
+        console.log(`UP: \t ${event.key}`)
     }
 
     private mouseDown(event: MouseEvent) {
-        this.primary = (event.buttons & 1) > 0;
-        this.secondary = (event.buttons & 2) > 0;
+        if ((event.buttons & 1) > 0) { this.primary = KeyPress.Down };
+        if ((event.buttons & 2) > 0) { this.secondary = KeyPress.Down };
     }
 
     private mouseUp(event: MouseEvent) {
-        this.primary = (event.buttons & 1) > 0;
-        this.secondary = (event.buttons & 2) > 0;
+        if ((event.buttons & 1) > 0) { this.primary = KeyPress.Up };
+        if ((event.buttons & 2) > 0) { this.secondary = KeyPress.Up };
     }
 
     private mouseMove(event: MouseEvent) {
@@ -63,7 +75,35 @@ export class InputManager {
         this.movementY += event.movementY;
     }
 
-    public consumeMouseDelta(): { x: number, y: number } {
+    private advanceKeyPress(state: KeyPress): KeyPress {
+        if (state == KeyPress.Down) {
+            return KeyPress.Held;
+        }
+
+        if (state == KeyPress.Up) {
+            return KeyPress.None;
+        }
+
+        return state;
+    }
+
+    public updateInputs() {
+        this.w = this.advanceKeyPress(this.w);
+        this.a = this.advanceKeyPress(this.a);
+        this.s = this.advanceKeyPress(this.s);
+        this.d = this.advanceKeyPress(this.d);
+        this.q = this.advanceKeyPress(this.q);
+        this.e = this.advanceKeyPress(this.e);
+        this.f = this.advanceKeyPress(this.f);
+
+        //mouse
+        this.primary = this.advanceKeyPress(this.primary);
+        this.secondary = this.advanceKeyPress(this.secondary);
+
+        this.consumeMouse();
+    }
+
+    public consumeMouse(): { x: number, y: number } {
         const delta = { x: this.movementX, y: this.movementY };
 
         this.movementX = 0;

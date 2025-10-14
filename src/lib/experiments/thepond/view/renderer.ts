@@ -11,8 +11,6 @@ import { PipelineTypes } from '../model/definitions';
 import { Camera } from '../model/camera';
 
 // assets 
-import asset_fish_1 from "../assets/fish_m00.png"
-import asset_fish_2 from "../assets/fish_m02.png"
 import asset_ground from "../assets/statue.obj?url"
 // cubemap
 import cube_top from "../assets/cube/up.png"

@@ -1,9 +1,10 @@
 import type { System } from "./system";
 import { TransformComponent } from "../components/transformComponent";
-import type { InputManager } from "../control/inputManager";
+import { KeyPress, type InputManager } from "../control/inputManager";
 import type { FreeCamComponent } from "../components/freeCamComponent";
 import type { CameraComponent } from "../components/cameraComponent";
 import { vec3, mat4 } from "gl-matrix";
+import { GameState } from "../control/gameState";
 
 
 export class FreeCamSystem implements System {
@@ -15,83 +16,97 @@ export class FreeCamSystem implements System {
     }
 
     update(
-        freecam: Map<number, FreeCamComponent>,
+        freeCamComponents: Map<number, FreeCamComponent>,
         cameraComponents: Map<number, CameraComponent>,
         transforms: Map<number, TransformComponent>,
+        gamestate: GameState,
         deltaTime: number,
     ) {
 
+        if (!gamestate.isFreeCamActive)
+            return;
+
         const worldUp = vec3.fromValues(0, 1, 0);
 
-        for (let [k, v] of freecam.entries()) {
-            let transform = transforms.get(k)!;
-            const cameraComponent = cameraComponents.get(k)!;
-            const cameraTransform = transforms.get(k);
-            const movement = this.inputManager.consumeMouseDelta();
+        // active camera has to be freecam because isFreeCamActive is true!
+        const activeCameraID = gamestate.activeCameraEntityID;
 
-            let forwardsAmount = 0;
-            let rightAmount = 0;
-            let upAmount = 0;
+        const freeCamComponent = freeCamComponents.get(activeCameraID);
+        const cameraComponent = cameraComponents.get(activeCameraID)!;
+        const transformComponent = transforms.get(activeCameraID);
 
-            if (!cameraComponent || !cameraTransform || !transform)
-                continue;
+        if (!freeCamComponent || !cameraComponent || !transformComponent)
+            return;
 
-            // update camera
-            cameraTransform.eulers[0] -= movement.y * v.mouseSpeed * deltaTime;
-            cameraTransform.eulers[1] -= movement.x * v.mouseSpeed * deltaTime;
+        const movement = this.inputManager.consumeMouse();
 
-            const maxPitch = 89 * (Math.PI / 180);
-            cameraTransform.eulers[0] = Math.max(-maxPitch, Math.min(maxPitch, cameraTransform.eulers[0]));
+        let forwardsAmount = 0;
+        let rightAmount = 0;
+        let upAmount = 0;
 
-            const rotationMatrix = mat4.create();
-            mat4.rotateY(rotationMatrix, rotationMatrix, cameraTransform.eulers[1]);
-            mat4.rotateX(rotationMatrix, rotationMatrix, cameraTransform.eulers[0]);
+        // update camera
+        transformComponent.eulers[0] -= movement.y * freeCamComponent.mouseSpeed * deltaTime;
+        transformComponent.eulers[1] -= movement.x * freeCamComponent.mouseSpeed * deltaTime;
 
+        const maxPitch = 89 * (Math.PI / 180);
+        transformComponent.eulers[0] = Math.max(-maxPitch, Math.min(maxPitch, transformComponent.eulers[0]));
 
-            vec3.set(cameraComponent.right, rotationMatrix[0], rotationMatrix[1], rotationMatrix[2]);
-            vec3.set(cameraComponent.forwards, rotationMatrix[8], rotationMatrix[9], rotationMatrix[10]);
-            vec3.negate(cameraComponent.forwards, cameraComponent.forwards);
-
-            // movement
-            if (this.inputManager.w) {
-                forwardsAmount += v.speed;
-            }
-
-            if (this.inputManager.s) {
-                forwardsAmount -= v.speed;
-            }
-
-            if (this.inputManager.a) {
-                rightAmount -= v.speed;
-            }
-
-            if (this.inputManager.d) {
-                rightAmount += v.speed;
-            }
-
-            if (this.inputManager.q) {
-                upAmount -= v.speed / 2;
-            }
-
-            if (this.inputManager.e) {
-                upAmount += v.speed / 2;
-            }
+        const rotationMatrix = mat4.create();
+        mat4.rotateY(rotationMatrix, rotationMatrix, transformComponent.eulers[1]);
+        mat4.rotateX(rotationMatrix, rotationMatrix, transformComponent.eulers[0]);
 
 
-            vec3.scaleAndAdd(
-                transform.position, transform.position,
-                cameraComponent.forwards, forwardsAmount
-            );
+        vec3.set(cameraComponent.right, rotationMatrix[0], rotationMatrix[1], rotationMatrix[2]);
+        vec3.set(cameraComponent.forwards, rotationMatrix[8], rotationMatrix[9], rotationMatrix[10]);
+        vec3.negate(cameraComponent.forwards, cameraComponent.forwards);
 
-            vec3.scaleAndAdd(
-                transform.position, transform.position,
-                cameraComponent.right, rightAmount
-            );
+        const deltaSpeed = freeCamComponent.speed * deltaTime;
+        const isWActive = this.inputManager.w === KeyPress.Held || this.inputManager.w === KeyPress.Down;
+        const isAActive = this.inputManager.a === KeyPress.Held || this.inputManager.a === KeyPress.Down;
+        const isSActive = this.inputManager.s === KeyPress.Held || this.inputManager.s === KeyPress.Down;
+        const isDActive = this.inputManager.d === KeyPress.Held || this.inputManager.d === KeyPress.Down;
+        const isQActive = this.inputManager.q === KeyPress.Held || this.inputManager.q === KeyPress.Down;
+        const isEActive = this.inputManager.e === KeyPress.Held || this.inputManager.e === KeyPress.Down;
 
-            vec3.scaleAndAdd(
-                transform.position, transform.position,
-                worldUp, upAmount
-            );
+        // movement
+        if (isWActive) {
+            forwardsAmount += deltaSpeed;
         }
+
+        if (isSActive) {
+            forwardsAmount -= deltaSpeed;
+        }
+
+        if (isAActive) {
+            rightAmount -= deltaSpeed;
+        }
+
+        if (isDActive) {
+            rightAmount += deltaSpeed;
+        }
+
+        if (isQActive) {
+            upAmount -= deltaSpeed / 2;
+        }
+
+        if (isEActive) {
+            upAmount += deltaSpeed / 2;
+        }
+
+
+        vec3.scaleAndAdd(
+            transformComponent.position, transformComponent.position,
+            cameraComponent.forwards, forwardsAmount
+        );
+
+        vec3.scaleAndAdd(
+            transformComponent.position, transformComponent.position,
+            cameraComponent.right, rightAmount
+        );
+
+        vec3.scaleAndAdd(
+            transformComponent.position, transformComponent.position,
+            worldUp, upAmount
+        );
     }
 }

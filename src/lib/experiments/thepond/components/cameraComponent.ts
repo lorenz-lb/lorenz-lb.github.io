@@ -16,6 +16,8 @@ export class CameraComponent {
     far: number;
     aspect: number;
 
+
+
     constructor(right: vec3 = vec3.create(),
         up: vec3 = vec3.create(),
         forwards: vec3 = vec3.create(),

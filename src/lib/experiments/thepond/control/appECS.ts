@@ -1,10 +1,11 @@
 import { vec2, vec3, mat4 } from "gl-matrix";
 import { EntityManager } from "./entityManager";
-import type { System } from "../systems/system";
+import { GameState } from "./gameState";
 import { MatrixUpdateSystem } from "../systems/matrixUpdateSystem";
 import { RenderSystem } from "../systems/renderSystem";
 import { TransformComponent } from "../components/transformComponent";
 import { MeshRenderComponent } from "../components/meshRenderComponent";
+
 
 import { OBJParser, MTLParser } from "./objParser";
 import { MaterialManager } from "../view/materialManager";
@@ -25,6 +26,12 @@ import mat_gras0 from "../assets/gras0/gras0.mtl?url"
 // stuatue
 import obj_statue from "../assets/statue.obj?url"
 
+// quad
+import obj_quad from "../assets/background/bg.obj?url"
+import mat_bg from "../assets/background/bg.mtl?url"
+
+
+
 import { FreeCamSystem } from "../systems/freeCamSystem";
 import { InputManager } from "./inputManager";
 import { FreeCamComponent } from "../components/freeCamComponent";
@@ -32,6 +39,7 @@ import { CameraSystem } from "../systems/cameraSystem";
 import { TextComponent } from "../components/textComponent";
 import { TextMeshGeneratorSystem } from "../systems/textMeshGeneratorSystem";
 import { HUDRenderSystem } from "../systems/uiRenderSystem";
+import { ToggleFreeCamSystem } from "../systems/toggleFreeCamSystem";
 
 export class ECSApp {
     private canvas: HTMLCanvasElement;
@@ -58,16 +66,20 @@ export class ECSApp {
     // ECS Core
     private entityManager: EntityManager;
     private inputManager: InputManager;
+    private gameState: GameState;
     private lastTime: number = 0;
     // Systeme
     private matrixUpdateSystem!: MatrixUpdateSystem;
     private renderSystem!: RenderSystem;
     private freeCamSystem!: FreeCamSystem;
+    private toggleFreeCamSystem!: ToggleFreeCamSystem;
+    private cameraSystem!: CameraSystem;
     private textMeshGeneratorSystem!: TextMeshGeneratorSystem;
     private hudRendersystem!: HUDRenderSystem;
 
     // Entity 
     private camera!: number;
+    private freeCam!: number;
     private blaster!: number;
     private statue!: number;
 
@@ -75,11 +87,15 @@ export class ECSApp {
     private projectionMatrix!: mat4;
     private viewMatrix!: mat4;
 
+    // hud
+    private textTL!: number;
+
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         this.entityManager = new EntityManager();
         this.inputManager = new InputManager(this.canvas);
+        this.gameState = new GameState();
     }
 
     async initialize() {
@@ -121,9 +137,10 @@ export class ECSApp {
         // create materials from MTL files
         await this.materialManager.loadMaterial(mat_blaster, "default");
         await this.materialManager.loadMaterial(mat_gras0);
+        await this.materialManager.loadMaterial(mat_bg);
 
 
-        const uniformBufferSize = 16 * 4; // mat4 Größe
+        const uniformBufferSize = 16 * 4;
         this.globalUniformBuffer = this.device.createBuffer({
             size: uniformBufferSize,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -201,6 +218,8 @@ export class ECSApp {
         this.matrixUpdateSystem = new MatrixUpdateSystem(this.device);
         this.renderSystem = new RenderSystem(this.device, this.globalBindGroup);
         this.freeCamSystem = new FreeCamSystem(this.inputManager);
+        this.toggleFreeCamSystem = new ToggleFreeCamSystem(this.inputManager);
+        this.cameraSystem = new CameraSystem();
         this.hudRendersystem = new HUDRenderSystem(this.device, this.canvas);
         await this.hudRendersystem.init();
         this.textMeshGeneratorSystem = new TextMeshGeneratorSystem(this.device);
@@ -217,13 +236,19 @@ export class ECSApp {
         this.entityManager.addComponent(this.camera,
             new CameraComponent(vec3.create(), vec3.create(), vec3.create(), { aspect: aspectRatio }));
         this.entityManager.addComponent(this.camera,
-            new TransformComponent(vec3.fromValues(0, 1, -3)));
-        this.entityManager.addComponent(this.camera,
-            new FreeCamComponent(vec3.create(), 0.1));
+            new TransformComponent(vec3.fromValues(0, 1, 2)));
+
+        this.freeCam = this.entityManager.createEntity();
+        this.entityManager.addComponent(this.freeCam,
+            new CameraComponent(vec3.create(), vec3.create(), vec3.create(), { aspect: aspectRatio }));
+        this.entityManager.addComponent(this.freeCam,
+            new TransformComponent(vec3.fromValues(0, 1, 2)));
+        this.entityManager.addComponent(this.freeCam,
+            new FreeCamComponent(5.0));
 
         this.blaster = this.entityManager.createEntity();
         let blasterMesh = await OBJParser.createMesh(this.device, obj_blaster, "blaster");
-        this.entityManager.addComponent(this.blaster, new TransformComponent(vec3.fromValues(0, 1, -1), vec3.fromValues(0, 90, 0), vec3.fromValues(1, 1, 1)));
+        this.entityManager.addComponent(this.blaster, new TransformComponent(vec3.fromValues(0, 1, -1), vec3.fromValues(0, 90, 0)));
         this.entityManager.addComponent(this.blaster, new MeshRenderComponent(
             this.materialManager.getMaterial("colormap")!,
             blasterMesh.buffer,
@@ -232,16 +257,27 @@ export class ECSApp {
 
         this.statue = this.entityManager.createEntity();
         let staueMesh = await OBJParser.createMesh(this.device, obj_statue, "statue");
-        this.entityManager.addComponent(this.statue, new TransformComponent(vec3.fromValues(0, 1, -1), vec3.fromValues(-90, 0, 0), vec3.fromValues(1, 1, 1)));
+        this.entityManager.addComponent(this.statue, new TransformComponent(vec3.fromValues(0, 1, -1), vec3.fromValues(-90, 0, 0)));
         this.entityManager.addComponent(this.statue, new MeshRenderComponent(
             this.materialManager.getMaterial("colormap")!,
             staueMesh.buffer,
             staueMesh.count
         ));
 
-        let text = this.entityManager.createEntity();
+        this.textTL = this.entityManager.createEntity();
+        this.entityManager.addComponent(this.textTL, new TextComponent("Hello World", vec2.fromValues(0.0, 0.0), "myatas"));
 
-        this.entityManager.addComponent(text, new TextComponent("Hello World", vec2.fromValues(0.0, 0.0), "myatas"));
+
+        let bg = this.entityManager.createEntity();
+        let quad = await OBJParser.createMesh(this.device, obj_quad, "quad");
+        this.entityManager.addComponent(bg, new TransformComponent(vec3.fromValues(0, 2, -5), vec3.fromValues(90, 0, 0), vec3.fromValues(15 / 2, 10 / 2, 10 / 2)));
+        this.entityManager.addComponent(bg, new MeshRenderComponent(
+            this.materialManager.getMaterial("background")!,
+            quad.buffer,
+            quad.count
+        ));
+
+        this.gameState.activeCameraEntityID = this.camera;
     }
 
 
@@ -257,34 +293,35 @@ export class ECSApp {
         const freeCamComponents = this.entityManager.getComponents(FreeCamComponent);
         const textComponents = this.entityManager.getComponents(TextComponent);
 
-
-        const cameraComponent = cameraComponents.get(this.camera)!;
         const cameraTransform = transformComponents.get(this.camera)!;
-        const blasterTransform = transformComponents.get(this.blaster)!;
 
+        // ############### Text
+        const textComponent = textComponents.get(this.textTL)!;
+        textComponent.text = "x/z/y=" + Math.round(cameraTransform.position[0] * 10) / 10 + " " + Math.round(cameraTransform.position[1] * 10) / 10 + " " + Math.round(cameraTransform.position[2] * 10) / 10;
+        textComponent.changed = true;
 
-        blasterTransform.eulers[1] += 3.0 * dt;
 
         // ############### Movement
-        //this.cameraSystem.update(cameraComponents, transformComponents);
-        this.freeCamSystem.update(freeCamComponents, cameraComponents, transformComponents, dt);
+        this.toggleFreeCamSystem.update(this.freeCam, this.camera, this.gameState);
+        this.freeCamSystem.update(freeCamComponents, cameraComponents, transformComponents, this.gameState, dt);
+        this.cameraSystem.update(cameraComponents, transformComponents)
 
+        const selectedCamera = cameraComponents.get(this.gameState.activeCameraEntityID)!;
+        const selectedCameraTransform = transformComponents.get(this.gameState.activeCameraEntityID)!;
 
         // ############### TextMesh Creation
         this.textMeshGeneratorSystem.update(textComponents);
 
 
-
-
         // ############### Global Uniforms 
         this.projectionMatrix = mat4.create();
-        mat4.perspective(this.projectionMatrix, cameraComponent.fov, cameraComponent.aspect, cameraComponent.near, cameraComponent.far);
+        mat4.perspective(this.projectionMatrix, selectedCamera.fov, selectedCamera.aspect, selectedCamera.near, selectedCamera.far);
 
 
         const target = vec3.create();
-        vec3.add(target, cameraTransform.position, cameraComponent.forwards);
+        vec3.add(target, selectedCameraTransform.position, selectedCamera.forwards);
         this.viewMatrix = mat4.create();
-        mat4.lookAt(this.viewMatrix, cameraTransform.position, target, vec3.fromValues(0, 1, 0));
+        mat4.lookAt(this.viewMatrix, selectedCameraTransform.position, target, vec3.fromValues(0, 1, 0));
 
         // ViewProjection Matrix initialisieren und hochladen
         const viewProjectionMatrix = mat4.create();
@@ -303,6 +340,7 @@ export class ECSApp {
         this.renderSystem.update(buffer, batches, this.depthStencilAttachment, currentTextureView);
         this.hudRendersystem.update(textComponents, this.depthStencilAttachment, currentTextureView)
 
+        this.inputManager.updateInputs();
         requestAnimationFrame(this.run);
     }
 }
