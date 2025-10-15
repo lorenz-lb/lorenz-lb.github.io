@@ -8,7 +8,7 @@ export interface MaterialProperies {
     /** base color */
     kd: vec3;
     /** texture */
-    map_kd: string;
+    map_kd?: string;
     /** specular color */
     ks?: vec3;
     /** ambient color */
@@ -44,16 +44,19 @@ export interface MaterialProperies {
  * It also contains the GPU ressources needed to dispatch the material to the GPU to be used in a shader
  * Thus this class abstracts all material apects needed to perform computation within webgpu
  */
-export class Material implements MaterialProperies {
+export class Material {
     // Material Props 
     name!: string;
     kd!: vec3;
-    map_kd!: string;
+    map_kd!: string | null;
     ks!: vec3;
     ka!: vec3;
     ns!: number;
     d!: number;
     illum!: number;
+
+    // Props
+    hasTexture: boolean = false;
 
     // GPU Props
     device!: GPUDevice
@@ -67,23 +70,28 @@ export class Material implements MaterialProperies {
 
     public async init(device: GPUDevice,
         materialData: MaterialProperies,
-        textureLayout: GPUBindGroupLayout,
+        pipeline: GPURenderPipeline,
         constantsLayout: GPUBindGroupLayout,
-        pipeline: GPURenderPipeline) {
+        textureLayout: GPUBindGroupLayout | null = null) {
 
         this.name = materialData.name;
-        this.map_kd = materialData.map_kd;
+        this.map_kd = materialData.map_kd ?? null;
         this.kd = materialData.kd;
 
         this.ks = materialData.ks ?? vec3.create();
         this.ka = materialData.ka ?? vec3.create();
         this.ns = materialData.ns ?? 0;
-        this.d = materialData.ns ?? 0;
+        this.d = materialData.d ?? 0;
         this.illum = materialData.illum ?? 0;
 
         this.pipeline = pipeline;
         this.createConstantGroup(device, constantsLayout);
-        await this.createTextureGroup(device, textureLayout);
+
+        // only texture if needed
+        if (this.map_kd && textureLayout) {
+            await this.createTextureGroup(device, textureLayout);
+            this.hasTexture = true;
+        }
     }
 
     private createConstantGroup(device: GPUDevice, layout: GPUBindGroupLayout) {

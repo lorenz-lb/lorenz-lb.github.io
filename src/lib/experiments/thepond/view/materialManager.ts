@@ -1,7 +1,8 @@
 import { MTLParser, type MTLData } from "../control/objParser";
 import { Material, type MaterialProperies } from "./material";
+import { vec3 } from "gl-matrix"
 
-export type ShaderVariant = 'default' | 'debug';
+export enum ShaderVariant { Textured, Untextured, Debug };
 
 export class MaterialManager {
 
@@ -13,8 +14,13 @@ export class MaterialManager {
     private device: GPUDevice;
     private textureLayout: GPUBindGroupLayout;
     private constantLayout: GPUBindGroupLayout;
-    private pipelineLayout: GPUPipelineLayout;
+    private texturedPipelineLayout: GPUPipelineLayout;
+    private untexturedPipelineLayout: GPUPipelineLayout;
     private frameGroupLayout: GPUBindGroupLayout;
+
+    // const
+    private vertexLayout;
+    private instanceLayout;
 
     constructor(device: GPUDevice, frameGroupLayout: GPUBindGroupLayout) {
         this.materialStore = new Map();
@@ -52,14 +58,57 @@ export class MaterialManager {
             label: "MaterialConstantLayout",
         });
 
-        this.pipelineLayout = device.createPipelineLayout({
+        this.texturedPipelineLayout = device.createPipelineLayout({
             bindGroupLayouts: [
                 this.frameGroupLayout,
+                this.constantLayout,
                 this.textureLayout,
+            ],
+            label: "TexturedMaterialGlobalPipelineLayout"
+        });
+
+        this.untexturedPipelineLayout = device.createPipelineLayout({
+            bindGroupLayouts: [
+                this.frameGroupLayout,
                 this.constantLayout,
             ],
-            label: "MaterialGlobalPipelineLayout"
+            label: "simpleMaterialGlobalPipelineLayout"
         });
+
+        this.vertexLayout = {
+            arrayStride: 32,
+            attributes: [
+                {
+                    shaderLocation: 0,
+                    format: "float32x3",
+                    offset: 0,
+                },
+
+                {
+                    shaderLocation: 1,
+                    format: "float32x3",
+                    offset: 12,
+                },
+                {
+                    shaderLocation: 2,
+                    format: "float32x2",
+                    offset: 24 /**2 4 byte numbers**/,
+                }
+
+            ],
+        }
+
+        this.instanceLayout = {
+            arrayStride: 16 * 4, // 64 Bytes für mat4
+            stepMode: 'instance',
+            attributes: [
+                { shaderLocation: 4, offset: 0, format: 'float32x4' },
+                { shaderLocation: 5, offset: 16, format: 'float32x4' },
+                { shaderLocation: 6, offset: 32, format: 'float32x4' },
+                { shaderLocation: 7, offset: 48, format: 'float32x4' },
+            ],
+        };
+
     }
 
     // #############################################################
@@ -69,9 +118,9 @@ export class MaterialManager {
     /**
      * loads a material file, creates GPU materials and stores them
      * CURRENTLY ONLY MTL FILES ARE SUPPORTED!
+     * ALL MATERIAL HAVE TEXTURES
      * */
-    public async loadMaterial(url: string, shaderVariant: ShaderVariant = 'default') {
-
+    public async loadMaterial(url: string, shaderVariant: ShaderVariant = ShaderVariant.Textured) {
         const mtlMap = new Map<string, MTLData>(Object.entries(await MTLParser.readMTLFile(url)));
         console.log(mtlMap);
 
@@ -82,13 +131,36 @@ export class MaterialManager {
                 const matProp = { name: v.name, kd: v.kd, map_kd: v.map_kd } as MaterialProperies;
 
                 let material = new Material();
-                await material.init(this.device, matProp, this.textureLayout, this.constantLayout, pipeline);
+                await material.init(this.device, matProp, pipeline, this.constantLayout, this.textureLayout);
 
                 this.materialStore.set(k, material);
             }
         }
 
         console.log(`Materials loaded: ${Array.from(this.materialStore.keys())}`)
+    }
+
+    /*
+     * crate a new Material with a shader and color
+     * */
+    public async createMaterial(id: string, properties: MaterialProperies | null = null, shaderVariant: ShaderVariant = ShaderVariant.Untextured) {
+
+        if (!this.materialStore.has(id)) {
+            if (!properties) {
+                properties = { name: id, kd: vec3.fromValues(1.0, 1.0, 1.0) } as MaterialProperies;
+            }
+
+            const pipeline = this.getPipeline(shaderVariant)!;
+            const matProp = { name: properties.name, kd: properties.kd } as MaterialProperies;
+
+            let material = new Material();
+            // no textureLayout in parameters
+            await material.init(this.device, matProp, pipeline, this.constantLayout);
+
+            this.materialStore.set(id, material);
+        }
+
+        console.log(`Material Created: ${id}`)
     }
 
     public getMaterial(name: string): Material | null {
@@ -112,40 +184,14 @@ export class MaterialManager {
     }
 
     public async createPipeline(variant: ShaderVariant, shaderCode: string, doAlpha = false) {
-        const vertexLayout = {
-            arrayStride: 32,
-            attributes: [
-                {
-                    shaderLocation: 0,
-                    format: "float32x3",
-                    offset: 0,
-                },
+        let selectedLayout: GPUPipelineLayout;
 
-                {
-                    shaderLocation: 1,
-                    format: "float32x3",
-                    offset: 12,
-                },
-                {
-                    shaderLocation: 2,
-                    format: "float32x2",
-                    offset: 24 /**2 4 byte numbers**/,
-                }
-
-            ],
+        if (variant == ShaderVariant.Textured || ShaderVariant.Debug) {
+            selectedLayout = this.texturedPipelineLayout;
         }
-
-        const instanceLayout = {
-            arrayStride: 16 * 4, // 64 Bytes für mat4
-            stepMode: 'instance',
-            attributes: [
-                { shaderLocation: 4, offset: 0, format: 'float32x4' },
-                { shaderLocation: 5, offset: 16, format: 'float32x4' },
-                { shaderLocation: 6, offset: 32, format: 'float32x4' },
-                { shaderLocation: 7, offset: 48, format: 'float32x4' },
-            ],
-        };
-
+        else {
+            selectedLayout = this.untexturedPipelineLayout;
+        }
 
         const targets: GPUColorTargetState[] = [{ format: navigator.gpu.getPreferredCanvasFormat(), blend: undefined }];
         const depthStencil: GPUDepthStencilState = {
@@ -165,12 +211,12 @@ export class MaterialManager {
         }
 
         const newPipeline = await this.device.createRenderPipelineAsync({
-            layout: this.pipelineLayout,
+            layout: selectedLayout,
 
             vertex: {
                 module: this.device.createShaderModule({ code: shaderCode }),
                 entryPoint: 'vs_main',
-                buffers: [vertexLayout, instanceLayout],
+                buffers: [this.vertexLayout, this.instanceLayout],
             },
 
             fragment: {
@@ -190,16 +236,4 @@ export class MaterialManager {
 
         this.pipelineCache.set(variant, newPipeline);
     }
-
-    // #############################################################
-    // ####################  Shader Management  ####################
-    // #############################################################
-
-    //     public registerShader(variant: ShaderVariant, code: string) {
-    //         this.shaderStore.set(variant, code);
-    //     }
-    //
-    //     public getShaderCode(variant: ShaderVariant): string | undefined {
-    //         return this.shaderStore.get(variant);
-    //     }
 }

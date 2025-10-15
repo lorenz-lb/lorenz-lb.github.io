@@ -31,8 +31,8 @@
       <canvas
         bind:this={pond_canvas}
         id="gfx-main"
-        width="800"
-        height="600"
+        width={1920 * 0.8}
+        height={1080 * 0.8}
         tabindex="0"
       ></canvas>
       <div class="flex space-x-10">

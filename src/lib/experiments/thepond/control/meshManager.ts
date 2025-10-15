@@ -1,11 +1,15 @@
 import { OBJParser } from "./objParser";
 
 interface MeshData {
+    id: string;
     vertexBuffer: GPUBuffer;
     // todo was ist das 
     indexBuffer?: GPUBuffer;
     drawGroups: Array<{ materialName: string, count: number, startIndex: number }>
     vertexCount: number
+
+    localVertices: Float32Array;
+    //localIndices?: Uint16Array | Uint32Array;
 }
 
 export class MeshManager {
@@ -25,13 +29,17 @@ export class MeshManager {
         const mesh = await OBJParser.createMesh(this.device, url, id);
 
         this.meshStore.set(id, {
+            id: id,
             vertexBuffer: mesh.buffer,
             vertexCount: mesh.count,
-            drawGroups: mesh.groups
+            drawGroups: mesh.groups,
+            localVertices: mesh.vertices
         } as MeshData)
     }
 
-
+    public getLocalVertices(id: string): Float32Array | undefined {
+        return this.meshStore.get(id)?.localVertices;
+    }
 }
 
 

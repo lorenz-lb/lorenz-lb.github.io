@@ -1,4 +1,3 @@
-
 struct TransformData {
     view: mat4x4<f32>,
     projection: mat4x4<f32>,
@@ -14,13 +13,13 @@ struct Fragment {
 };
 
 // frame group
-@binding(0) @group(0) var<uniform> transformUBO: TransformData;
-@binding(1) @group(0) var<storage, read> objects: ObjectData;
+@group(0) @binding(0) var<uniform> transformUBO: TransformData;
+@group(0) @binding(1) var<storage, read> objects: ObjectData;
 
 
 // mat group
-@binding(0) @group(1) var myTexture: texture_2d<f32>;
-@binding(1) @group(1) var mySampler: sampler;
+@group(1) @binding(0) var myTexture: texture_2d<f32>;
+@group(1) @binding(1) var mySampler: sampler;
 
 @vertex
 fn vs_main(

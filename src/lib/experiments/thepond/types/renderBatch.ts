@@ -1,7 +1,7 @@
 export interface RenderBatch {
     pipeline: GPURenderPipeline;
     meshBuffer: GPUBuffer;
-    textureBindGroup: GPUBindGroup;
+    textureBindGroup?: GPUBindGroup;
     constantsBindGroup: GPUBindGroup;
     /* Number of Entities in Batch */
     vertexCount: number;

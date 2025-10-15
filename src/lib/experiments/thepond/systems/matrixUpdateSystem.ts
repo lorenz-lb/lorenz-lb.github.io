@@ -35,7 +35,9 @@ export class MatrixUpdateSystem implements System {
             const transform = transforms.get(entityId);
             if (!transform) continue; // Entität muss Transform und RenderData haben
 
-            const batchKey = `${render.material.pipeline.label}_${render.meshVAO.label}_${render.material.textureBindGroup.label}`;
+            let textureBindgroupLable = render.material.hasTexture ? render.material.textureBindGroup.label : "NOTEXTURE";
+
+            const batchKey = `${render.material.pipeline.label}_${render.meshVAO.label}_${textureBindgroupLable}`;
 
             entityList.push({ id: entityId, key: batchKey, transform, render });
         }
@@ -50,17 +52,25 @@ export class MatrixUpdateSystem implements System {
         for (const entity of entityList) {
             // ##### change batch
             if (entity.key !== lastBatchKey) {
-                currentBatches.set(entity.key, {
-                    pipeline: entity.render.material.pipeline,
-                    textureBindGroup: entity.render.material.textureBindGroup,
-                    constantsBindGroup: entity.render.material.constantsBindGroup,
+                const renderBatch =
+                    {
+                        pipeline: entity.render.material.pipeline,
+                        //textureBindGroup: entity.render.material.textureBindGroup,
+                        constantsBindGroup: entity.render.material.constantsBindGroup,
 
-                    meshBuffer: entity.render.meshVAO,
-                    vertexCount: entity.render.vertexCount,
+                        meshBuffer: entity.render.meshVAO,
+                        vertexCount: entity.render.vertexCount,
 
-                    instanceCount: 0,
-                    instanceOffset: matrixOffsetIndex
-                } as RenderBatch);
+                        instanceCount: 0,
+                        instanceOffset: matrixOffsetIndex
+                    } as RenderBatch;
+
+
+                if (entity.render.material.hasTexture) {
+                    renderBatch.textureBindGroup = entity.render.material.textureBindGroup;
+                }
+
+                currentBatches.set(entity.key, renderBatch);
                 lastBatchKey = entity.key;
             }
 
@@ -72,7 +82,7 @@ export class MatrixUpdateSystem implements System {
             mat4.rotateZ(modelMatrix, modelMatrix, Deg2Rad(entity.transform.eulers[2]));
 
             // todo Scale
-            mat4.scale(modelMatrix, modelMatrix, entity.transform.scale); 
+            mat4.scale(modelMatrix, modelMatrix, entity.transform.scale);
 
             this.instanceMatrixArray.set(modelMatrix, matrixOffsetIndex * 16);
 

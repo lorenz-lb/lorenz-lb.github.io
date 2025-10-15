@@ -94,9 +94,15 @@ export class FreeCamSystem implements System {
         }
 
 
+        const flatForwards = vec3.clone(cameraComponent.forwards);
+
+        flatForwards[1] = 0;
+
+        vec3.normalize(flatForwards, flatForwards);
+
         vec3.scaleAndAdd(
             transformComponent.position, transformComponent.position,
-            cameraComponent.forwards, forwardsAmount
+            flatForwards, forwardsAmount
         );
 
         vec3.scaleAndAdd(

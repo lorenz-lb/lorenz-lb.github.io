@@ -144,7 +144,7 @@ export class OBJParser {
     }
 
     static async createMesh(device: GPUDevice, url: string, label: string)
-        : Promise<{ buffer: GPUBuffer, count: number, groups: Array<{ materialName: string, startIndex: number, count: number }> }> {
+        : Promise<{ buffer: GPUBuffer, count: number, groups: Array<{ materialName: string, startIndex: number, count: number }>, vertices: Float32Array }> {
         let objData = await OBJParser.readOBJFile(url);
 
         // Vertex, Normal, UV
@@ -162,7 +162,7 @@ export class OBJParser {
 
         console.log(`OBJ-File read: \t vertexCount: ${objData.vertexCount} \t vertices.length: ${objData.vertices.length} \t vertexNormals: ${objData.vn.length}`)
 
-        return { buffer, count: objData.vertexCount, groups: objData.drawGroups };
+        return { buffer, count: objData.vertexCount, groups: objData.drawGroups, vertices: objData.vertices };
     }
 }
 

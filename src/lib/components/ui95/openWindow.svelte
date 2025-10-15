@@ -44,6 +44,8 @@
   let handleBar: HTMLElement;
 
   function handleMouseDown(event: MouseEvent) {
+    if (isPointerLockActive()) return;
+
     console.log("MouseDownCalled");
     isdragging = true;
 
@@ -55,6 +57,8 @@
   }
 
   function handleMouseMove(event: MouseEvent) {
+    if (isPointerLockActive()) return;
+
     if (isdragging) {
       let clampedMouseX = clamp(0, availableArea.offsetWidth, event.clientX);
       let clampedMouseY = clamp(
@@ -69,6 +73,7 @@
   }
 
   function handleMouseUp() {
+    if (isPointerLockActive()) return;
     isdragging = false;
 
     windowEvents.onChangePosition(program.id, currentPosX, currentPosY);
@@ -87,15 +92,21 @@
   }
 
   function openwindowMouseDown() {
+    if (isPointerLockActive()) return;
     dataManipulator.setfocus(program.id);
   }
   function openwindowMouseUp() {
+    if (isPointerLockActive()) return;
     // set maximized false
     if (!windowData.maximized) {
       currentHeight = self.offsetHeight;
       currentWidth = self.offsetWidth;
     }
     propagateUpdates();
+  }
+
+  function isPointerLockActive() {
+    return document.pointerLockElement !== null;
   }
 </script>
 

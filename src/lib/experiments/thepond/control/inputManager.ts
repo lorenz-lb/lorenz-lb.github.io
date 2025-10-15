@@ -17,6 +17,9 @@ export class InputManager {
     e: KeyPress = KeyPress.None;
     f: KeyPress = KeyPress.None;
 
+    // special keys
+    shift: KeyPress = KeyPress.None;
+
     // mouse
     primary: KeyPress = KeyPress.None;
     secondary: KeyPress = KeyPress.None;
@@ -47,6 +50,11 @@ export class InputManager {
             this[key] = KeyPress.Down;
         }
 
+        // handle special keys
+        if (event.shiftKey) {
+            if (this.shift != KeyPress.Held) { this.shift = KeyPress.Down }
+        }
+
         console.log(`DOWN: \t ${event.key} `)
     }
 
@@ -55,6 +63,11 @@ export class InputManager {
 
         if (this[key] !== undefined) {
             this[key] = KeyPress.Up;
+        }
+
+        // handle special keys
+        if (event.shiftKey) {
+            this.shift = KeyPress.Up;
         }
 
         console.log(`UP: \t ${event.key}`)
@@ -95,6 +108,9 @@ export class InputManager {
         this.q = this.advanceKeyPress(this.q);
         this.e = this.advanceKeyPress(this.e);
         this.f = this.advanceKeyPress(this.f);
+
+        // special keys
+        this.shift = this.advanceKeyPress(this.shift);
 
         //mouse
         this.primary = this.advanceKeyPress(this.primary);

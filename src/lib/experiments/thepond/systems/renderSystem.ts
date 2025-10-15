@@ -32,13 +32,19 @@ export class RenderSystem implements System {
         };
 
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+        // not all materials use textures
+
 
         // all batches
         for (const batch of batches.values()) {
             passEncoder.setPipeline(batch.pipeline);
             passEncoder.setBindGroup(0, this.globalBindGroup);
-            passEncoder.setBindGroup(1, batch.textureBindGroup);
-            passEncoder.setBindGroup(2, batch.constantsBindGroup);
+            passEncoder.setBindGroup(1, batch.constantsBindGroup);
+
+            if (batch.textureBindGroup) {
+                passEncoder.setBindGroup(2, batch.textureBindGroup);
+            }
+
             passEncoder.setVertexBuffer(0, batch.meshBuffer);
             passEncoder.setVertexBuffer(1, instanceBuffer);
 

@@ -20,6 +20,14 @@ export class HUDRenderSystem implements System {
     private shaderModule!: GPUShaderModule;
 
 
+    // ----- TEMP Crosshair ------
+    //
+    private crosshairBuffer!: GPUBuffer;
+    private crosshairVertexCount!: number;
+    //
+    // ----- -------------- ------
+
+
 
     constructor(
         device: GPUDevice,
@@ -100,8 +108,8 @@ export class HUDRenderSystem implements System {
             primitive: { topology: 'triangle-list' },
 
             depthStencil: {
-                depthWriteEnabled: false,
-                depthCompare: 'always',
+                //depthWriteEnabled: false,
+                //depthCompare: 'always',
                 format: 'depth24plus-stencil8',
             },
             fragment: {
@@ -116,6 +124,32 @@ export class HUDRenderSystem implements System {
                 }],
             },
         });
+
+        // ------ TEMP Crosshair ----- 
+        const crosshairSize = 5.0;
+        const halfWidth = this.canvasWidth / 2;
+        const halfHeight = this.canvasHeight / 2;
+        const uv = 2.0;
+
+        const crosshairVertices = new Float32Array([
+            halfWidth - crosshairSize, halfHeight - crosshairSize, uv, uv,
+            halfWidth + crosshairSize, halfHeight + crosshairSize, uv, uv,
+            halfWidth + crosshairSize, halfHeight - crosshairSize, uv, uv,
+
+            halfWidth - crosshairSize, halfHeight - crosshairSize, uv, uv,
+            halfWidth - crosshairSize, halfHeight + crosshairSize, uv, uv,
+            halfWidth + crosshairSize, halfHeight + crosshairSize, uv, uv,
+        ]);
+
+        this.crosshairBuffer = this.device.createBuffer({
+            size: crosshairVertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            label: "HUD Crosshair Vertex Buffer"
+        });
+
+        this.device.queue.writeBuffer(this.crosshairBuffer, 0, crosshairVertices);
+        this.crosshairVertexCount = 6;
+        // -------------------------------------------------------------
 
     }
 
@@ -185,6 +219,14 @@ export class HUDRenderSystem implements System {
             passEncoder.setVertexBuffer(0, v.vertexBuffer);
             passEncoder.draw(v.vertexCount);
         }
+
+
+        // ------- TEMP crosshair ----------
+        const crosshairColor = new Float32Array([1.0, 1.0, 1.0, 1.0]);
+        this.device.queue.writeBuffer(this.colorUniformBuffer, 0, crosshairColor);
+        passEncoder.setVertexBuffer(0, this.crosshairBuffer);
+        passEncoder.draw(this.crosshairVertexCount);
+        // ------- -------------- ----------
 
         passEncoder.end();
         this.device.queue.submit([commandEncoder.finish()]);

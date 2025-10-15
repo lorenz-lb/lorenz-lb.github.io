@@ -8,7 +8,7 @@ import { MeshRenderComponent } from "../components/meshRenderComponent";
 
 
 import { OBJParser, MTLParser } from "./objParser";
-import { MaterialManager } from "../view/materialManager";
+import { MaterialManager, ShaderVariant } from "../view/materialManager";
 
 // ############# Shader #############
 import defaultShader from "../shaders/defaultShader.wgsl?raw"
@@ -40,6 +40,10 @@ import { TextComponent } from "../components/textComponent";
 import { TextMeshGeneratorSystem } from "../systems/textMeshGeneratorSystem";
 import { HUDRenderSystem } from "../systems/uiRenderSystem";
 import { ToggleFreeCamSystem } from "../systems/toggleFreeCamSystem";
+import { MeshManager } from "./meshManager";
+import { AssetReferenceComponent } from "../components/assetReferenceComponent";
+import { PositionManipulationSystemDEBUG } from "../systems/positionManipulationSystemDEBUG";
+import type { MaterialProperies } from "../view/material";
 
 export class ECSApp {
     private canvas: HTMLCanvasElement;
@@ -62,6 +66,7 @@ export class ECSApp {
 
     // assets
     materialManager!: MaterialManager;
+    meshManager!: MeshManager;
 
     // ECS Core
     private entityManager: EntityManager;
@@ -71,15 +76,18 @@ export class ECSApp {
     // Systeme
     private matrixUpdateSystem!: MatrixUpdateSystem;
     private renderSystem!: RenderSystem;
-    private freeCamSystem!: FreeCamSystem;
-    private toggleFreeCamSystem!: ToggleFreeCamSystem;
     private cameraSystem!: CameraSystem;
     private textMeshGeneratorSystem!: TextMeshGeneratorSystem;
     private hudRendersystem!: HUDRenderSystem;
 
+    // debug Systems
+    private freeCamSystem!: FreeCamSystem;
+    private toggleFreeCamSystem!: ToggleFreeCamSystem;
+    private positionManipulationSystem!: PositionManipulationSystemDEBUG;
+
     // Entity 
     private camera!: number;
-    private freeCam!: number;
+    private debugCam!: number;
     private blaster!: number;
     private statue!: number;
 
@@ -99,6 +107,7 @@ export class ECSApp {
     }
 
     async initialize() {
+
         await this.setupDevice();
         await this.makeBindGroupLayouts();
         await this.createAssets();
@@ -128,17 +137,25 @@ export class ECSApp {
 
     async createAssets() {
 
+        // mesh
+        this.meshManager = new MeshManager(this.device);
+        await this.meshManager.loadMesh("blaster", obj_blaster);
+        await this.meshManager.loadMesh("statue", obj_statue);
+        await this.meshManager.loadMesh("quad", obj_quad);
+
+
+        // material
         this.materialManager = new MaterialManager(this.device, this.frameGroupLayouts);
 
         // create all pipelines for each shader
-        await this.materialManager.createPipeline("default", defaultShader);
-        await this.materialManager.createPipeline("debug", debugShader);
+        await this.materialManager.createPipeline(ShaderVariant.Textured, defaultShader);
+        await this.materialManager.createPipeline(ShaderVariant.Untextured, debugShader);
 
         // create materials from MTL files
-        await this.materialManager.loadMaterial(mat_blaster, "default");
+        await this.materialManager.loadMaterial(mat_blaster, ShaderVariant.Textured);
         await this.materialManager.loadMaterial(mat_gras0);
         await this.materialManager.loadMaterial(mat_bg);
-
+        await this.materialManager.createMaterial("debug", { name: "debug", kd: vec3.fromValues(1.0, 1.0, 0.0) } as MaterialProperies, ShaderVariant.Untextured)
 
         const uniformBufferSize = 16 * 4;
         this.globalUniformBuffer = this.device.createBuffer({
@@ -217,8 +234,11 @@ export class ECSApp {
         // d) ECS System Initialisierung
         this.matrixUpdateSystem = new MatrixUpdateSystem(this.device);
         this.renderSystem = new RenderSystem(this.device, this.globalBindGroup);
+
         this.freeCamSystem = new FreeCamSystem(this.inputManager);
         this.toggleFreeCamSystem = new ToggleFreeCamSystem(this.inputManager);
+        this.positionManipulationSystem = new PositionManipulationSystemDEBUG(this.inputManager, this.meshManager);
+
         this.cameraSystem = new CameraSystem();
         this.hudRendersystem = new HUDRenderSystem(this.device, this.canvas);
         await this.hudRendersystem.init();
@@ -238,46 +258,68 @@ export class ECSApp {
         this.entityManager.addComponent(this.camera,
             new TransformComponent(vec3.fromValues(0, 1, 2)));
 
-        this.freeCam = this.entityManager.createEntity();
-        this.entityManager.addComponent(this.freeCam,
+        this.debugCam = this.entityManager.createEntity();
+        this.entityManager.addComponent(this.debugCam,
             new CameraComponent(vec3.create(), vec3.create(), vec3.create(), { aspect: aspectRatio }));
-        this.entityManager.addComponent(this.freeCam,
+        this.entityManager.addComponent(this.debugCam,
             new TransformComponent(vec3.fromValues(0, 1, 2)));
-        this.entityManager.addComponent(this.freeCam,
+        this.entityManager.addComponent(this.debugCam,
             new FreeCamComponent(5.0));
 
         this.blaster = this.entityManager.createEntity();
-        let blasterMesh = await OBJParser.createMesh(this.device, obj_blaster, "blaster");
+        // todo
+        let blasterMesh = this.meshManager.getMesh("blaster")!;
         this.entityManager.addComponent(this.blaster, new TransformComponent(vec3.fromValues(0, 1, -1), vec3.fromValues(0, 90, 0)));
+        this.entityManager.addComponent(this.blaster, new AssetReferenceComponent(blasterMesh.id));
         this.entityManager.addComponent(this.blaster, new MeshRenderComponent(
             this.materialManager.getMaterial("colormap")!,
-            blasterMesh.buffer,
-            blasterMesh.count
+            blasterMesh.vertexBuffer,
+            blasterMesh.vertexCount
         ));
 
         this.statue = this.entityManager.createEntity();
-        let staueMesh = await OBJParser.createMesh(this.device, obj_statue, "statue");
+        //todo
+        let statueMesh = this.meshManager.getMesh("statue")!;
         this.entityManager.addComponent(this.statue, new TransformComponent(vec3.fromValues(0, 1, -1), vec3.fromValues(-90, 0, 0)));
+        this.entityManager.addComponent(this.statue, new AssetReferenceComponent(statueMesh.id));
         this.entityManager.addComponent(this.statue, new MeshRenderComponent(
             this.materialManager.getMaterial("colormap")!,
-            staueMesh.buffer,
-            staueMesh.count
+            statueMesh.vertexBuffer,
+            statueMesh.vertexCount
         ));
 
         this.textTL = this.entityManager.createEntity();
         this.entityManager.addComponent(this.textTL, new TextComponent("Hello World", vec2.fromValues(0.0, 0.0), "myatas"));
 
 
+        // ############ Background ############
         let bg = this.entityManager.createEntity();
-        let quad = await OBJParser.createMesh(this.device, obj_quad, "quad");
-        this.entityManager.addComponent(bg, new TransformComponent(vec3.fromValues(0, 2, -5), vec3.fromValues(90, 0, 0), vec3.fromValues(15 / 2, 10 / 2, 10 / 2)));
+        let quad = this.meshManager.getMesh("quad")!;
+        this.entityManager.addComponent(bg, new TransformComponent(vec3.fromValues(0, 1, -30),
+            vec3.fromValues(90, 0, 0), vec3.fromValues(19.20, 1, 10.80)));
+        this.entityManager.addComponent(bg, new AssetReferenceComponent(quad.id));
         this.entityManager.addComponent(bg, new MeshRenderComponent(
             this.materialManager.getMaterial("background")!,
-            quad.buffer,
-            quad.count
+            quad.vertexBuffer,
+            quad.vertexCount
         ));
 
+        // ############ Floor ############
+        // let floor = this.entityManager.createEntity();
+        // let floorQuad = this.meshManager.getMesh("quad")!;
+        // this.entityManager.addComponent(floor, new TransformComponent(vec3.fromValues(0, 1, -30),
+        //     vec3.fromValues(90, 0, 0), vec3.fromValues(19.20, 1, 10.80)));
+        // this.entityManager.addComponent(floor, new AssetReferenceComponent(floorQuad.id));
+        // this.entityManager.addComponent(floor, new MeshRenderComponent(
+        //     this.materialManager.getMaterial("background")!,
+        //     floorQuad.vertexBuffer,
+        //     floorQuad.vertexCount
+        // ));
+        //
+
+
         this.gameState.activeCameraEntityID = this.camera;
+
     }
 
 
@@ -292,6 +334,7 @@ export class ECSApp {
         const cameraComponents = this.entityManager.getComponents(CameraComponent);
         const freeCamComponents = this.entityManager.getComponents(FreeCamComponent);
         const textComponents = this.entityManager.getComponents(TextComponent);
+        const assetRefComponents = this.entityManager.getComponents(AssetReferenceComponent);
 
         const cameraTransform = transformComponents.get(this.camera)!;
 
@@ -300,9 +343,10 @@ export class ECSApp {
         textComponent.text = "x/z/y=" + Math.round(cameraTransform.position[0] * 10) / 10 + " " + Math.round(cameraTransform.position[1] * 10) / 10 + " " + Math.round(cameraTransform.position[2] * 10) / 10;
         textComponent.changed = true;
 
+        this.positionManipulationSystem.update(this.gameState, transformComponents, cameraComponents, assetRefComponents);
 
         // ############### Movement
-        this.toggleFreeCamSystem.update(this.freeCam, this.camera, this.gameState);
+        this.toggleFreeCamSystem.update(this.debugCam, this.camera, this.gameState);
         this.freeCamSystem.update(freeCamComponents, cameraComponents, transformComponents, this.gameState, dt);
         this.cameraSystem.update(cameraComponents, transformComponents)
 

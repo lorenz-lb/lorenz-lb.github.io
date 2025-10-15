@@ -16,10 +16,10 @@ struct Uniforms {
     viewProjectionMatrix: mat4x4<f32>,
 };
 
-@binding(0) @group(0) var<uniform> uniforms : Uniforms;
-@binding(0) @group(1)  var textureData: texture_2d<f32>; 
-@binding(1) @group(1) var textureSampler: sampler;
-@binding(0) @group(2) var<uniform> materialUniforms : MaterialConstants; 
+@group(0) @binding(0) var<uniform> uniforms : Uniforms;
+@group(1) @binding(0) var<uniform> materialUniforms : MaterialConstants; 
+@group(2) @binding(0) var textureData: texture_2d<f32>; 
+@group(2) @binding(1) var textureSampler: sampler;
 
 
         
