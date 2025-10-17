@@ -37,6 +37,48 @@ export class MeshManager {
         } as MeshData)
     }
 
+
+    public createQuad(label: string = "quad") {
+
+        const vertices = new Float32Array([
+            -0.5, 0.0, -0.5, 0.0, 1.0, 0.0, 0.0, 1.0,
+            -0.5, 0.0, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0,
+            0.5, 0.0, -0.5, 0.0, 1.0, 0.0, 1.0, 1.0,
+
+            -0.5, 0.0, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0,
+            0.5, 0.0, 0.5, 0.0, 1.0, 0.0, 1.0, 0.0,
+            0.5, 0.0, -0.5, 0.0, 1.0, 0.0, 1.0, 1.0,
+        ]);
+
+        const vertexCount = vertices.length / 8;
+
+        const buffer = this.device.createBuffer({
+            size: vertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true,
+            label: label
+        });
+
+        new Float32Array(buffer.getMappedRange()).set(vertices);
+        buffer.unmap();
+
+        const groups = [
+            {
+                materialName: "PLACEHOLDER",
+                startIndex: 0,
+                count: vertexCount
+            }
+        ];
+
+        this.meshStore.set("quad", {
+            id: "quad",
+            vertexBuffer: buffer,
+            vertexCount: vertexCount,
+            drawGroups: groups,
+            localVertices: vertices
+        } as MeshData)
+    }
+
     public getLocalVertices(id: string): Float32Array | undefined {
         return this.meshStore.get(id)?.localVertices;
     }

@@ -2,7 +2,8 @@ import { MTLParser, type MTLData } from "../control/objParser";
 import { Material, type MaterialProperies } from "./material";
 import { vec3 } from "gl-matrix"
 
-export enum ShaderVariant { Textured, Untextured, Debug };
+export enum ShaderVariant { Textured, TexturedAlpha, ScrollingTexture, Untextured, Debug };
+const TEXTURED_SHADER = [ShaderVariant.Textured, ShaderVariant.TexturedAlpha, ShaderVariant.ScrollingTexture];
 
 export class MaterialManager {
 
@@ -25,7 +26,6 @@ export class MaterialManager {
     constructor(device: GPUDevice, frameGroupLayout: GPUBindGroupLayout) {
         this.materialStore = new Map();
         this.pipelineCache = new Map();
-        // this.shaderStore = new Map();
 
         // GPU ressources
         this.device = device;
@@ -151,12 +151,15 @@ export class MaterialManager {
             }
 
             const pipeline = this.getPipeline(shaderVariant)!;
-            const matProp = { name: properties.name, kd: properties.kd } as MaterialProperies;
 
             let material = new Material();
-            // no textureLayout in parameters
-            await material.init(this.device, matProp, pipeline, this.constantLayout);
 
+            if (properties.map_kd) {
+                await material.init(this.device, properties, pipeline, this.constantLayout, this.textureLayout);
+            }
+            else {
+                await material.init(this.device, properties, pipeline, this.constantLayout);
+            }
             this.materialStore.set(id, material);
         }
 
@@ -185,8 +188,9 @@ export class MaterialManager {
 
     public async createPipeline(variant: ShaderVariant, shaderCode: string, doAlpha = false) {
         let selectedLayout: GPUPipelineLayout;
+        let alphaLable = "";
 
-        if (variant == ShaderVariant.Textured || ShaderVariant.Debug) {
+        if (TEXTURED_SHADER.includes(variant)) {
             selectedLayout = this.texturedPipelineLayout;
         }
         else {
@@ -196,7 +200,7 @@ export class MaterialManager {
         const targets: GPUColorTargetState[] = [{ format: navigator.gpu.getPreferredCanvasFormat(), blend: undefined }];
         const depthStencil: GPUDepthStencilState = {
             format: 'depth24plus-stencil8',
-            depthCompare: 'less',
+            depthCompare: 'less-equal',
             depthWriteEnabled: true
         };
 
@@ -207,14 +211,15 @@ export class MaterialManager {
                 alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
             };
             depthStencil.depthWriteEnabled = false;
-            depthStencil.depthCompare = 'always';
+            depthStencil.depthCompare = 'less-equal';
+            alphaLable = "ALPHA";
         }
 
         const newPipeline = await this.device.createRenderPipelineAsync({
             layout: selectedLayout,
 
             vertex: {
-                module: this.device.createShaderModule({ code: shaderCode }),
+                module: this.device.createShaderModule({ code: shaderCode, label: `ShaderVariant:${variant}` }),
                 entryPoint: 'vs_main',
                 buffers: [this.vertexLayout, this.instanceLayout],
             },
@@ -227,11 +232,12 @@ export class MaterialManager {
 
             primitive: {
                 topology: 'triangle-list',
-                cullMode: 'back',
+                // TODO SET BACKFACECULLING WHEN FINISH
+                cullMode: 'none',
             },
 
             depthStencil: depthStencil,
-            label: `${variant} Pipeline`
+            label: `${variant} Pipeline${" " + alphaLable}`
         });
 
         this.pipelineCache.set(variant, newPipeline);

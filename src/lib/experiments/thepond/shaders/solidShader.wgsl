@@ -7,21 +7,26 @@ struct MaterialConstants {
     nsValue: f32,
     dValue: f32,
     illumModel: f32,
-    // padding do not use
-    PADDING: f32
+    scrollSpeed: f32,
+    parallaxFactor: f32,
+    PADDING1: f32,
+    PADDING2: f32,
+    PADDING3: f32
 };
-
 
 struct Uniforms {
     viewProjectionMatrix: mat4x4<f32>,
+    cameraPosition: vec4f,
+    time: f32,
+    PADDING1: f32,
+    PADDING2: f32,
+    PADDING3: f32
 };
 
 @group(0) @binding(0) var<uniform> uniforms : Uniforms;
 @group(1) @binding(0) var<uniform> materialUniforms : MaterialConstants; 
 @group(2) @binding(0) var textureData: texture_2d<f32>; 
 @group(2) @binding(1) var textureSampler: sampler;
-
-
         
 struct VertexInput {
     @location(0) position: vec4f,
@@ -60,11 +65,13 @@ fn vs_main(input: VertexInput) -> VertexOutput {
     output.lighting_intensity = diffuseIntensity;
 
     return output;
-}
+} 
 
      @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4f {
-    var texcolor = textureSample(textureData, textureSampler, input.uv);
-    //return vec4f(finalColor.rgb, 1.0);
-    return vec4f(1.0, 0.0, 1.0, 1.0);
+
+    // return vec4f(materialUniforms.kdColor, 1.0);
+    let mat = materialUniforms.kdColor;
+
+    return vec4f(mat.xyz, 1.0);
 }

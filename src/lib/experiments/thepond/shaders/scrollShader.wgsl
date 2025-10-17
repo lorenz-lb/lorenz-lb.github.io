@@ -7,12 +7,20 @@ struct MaterialConstants {
     nsValue: f32,
     dValue: f32,
     illumModel: f32,
-    // padding do not use
-    PADDING: f32
+    scrollSpeed: f32,
+    parallaxFactor: f32,
+    PADDING1: f32,
+    PADDING2: f32,
+    PADDING3: f32
 };
 
 struct Uniforms {
     viewProjectionMatrix: mat4x4<f32>,
+    cameraPosition: vec4f,
+    time: f32,
+    PADDING1: f32,
+    PADDING2: f32,
+    PADDING3: f32
 };
 
 @group(0) @binding(0) var<uniform> uniforms : Uniforms;
@@ -46,15 +54,10 @@ fn vs_main(input: VertexInput) -> VertexOutput {
         input.modelMatrix_3
     );
 
-    let lightDirection: vec3f = normalize(vec3f(0.5, -0.5, -1.0));
     output.position = uniforms.viewProjectionMatrix * modelMatrix * input.position;
-    // inverse v 
-    output.uv = vec2f(input.uv.x, 1 - input.uv.y);
-    let worldNormal = normalize((modelMatrix * input.normal).xyz);
-    let L: vec3f = -lightDirection;
-    let diffuseIntensity = max(dot(worldNormal, L), 0.5);
 
-    output.lighting_intensity = diffuseIntensity;
+    let scroll = (uniforms.time / 100) * materialUniforms.scrollSpeed * materialUniforms.parallaxFactor;
+    output.uv = vec2f(input.uv.x + scroll, 1 - input.uv.y);
 
     return output;
 }
@@ -62,6 +65,5 @@ fn vs_main(input: VertexInput) -> VertexOutput {
      @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4f {
     var texcolor = textureSample(textureData, textureSampler, input.uv);
-    //return vec4f(finalColor.rgb, 1.0);
     return texcolor;
 }

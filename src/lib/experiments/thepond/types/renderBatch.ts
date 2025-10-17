@@ -1,4 +1,5 @@
 export interface RenderBatch {
+    isTransparent: boolean;
     pipeline: GPURenderPipeline;
     meshBuffer: GPUBuffer;
     textureBindGroup?: GPUBindGroup;

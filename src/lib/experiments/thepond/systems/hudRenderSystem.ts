@@ -14,7 +14,6 @@ export class HUDRenderSystem implements System {
     private colorBindGroup!: GPUBindGroup;
     private orthoBindGroup!: GPUBindGroup;
     private atlasBindGroup!: GPUBindGroup;
-    private renderPassDescriptor!: GPURenderPassDescriptor;
     private canvasWidth: number;
     private canvasHeight: number;
     private shaderModule!: GPUShaderModule;
@@ -31,11 +30,12 @@ export class HUDRenderSystem implements System {
 
     constructor(
         device: GPUDevice,
-        canvas: HTMLCanvasElement,
+        width: number,
+        height: number
     ) {
         this.device = device;
-        this.canvasWidth = canvas.width;
-        this.canvasHeight = canvas.height;
+        this.canvasWidth = width;
+        this.canvasHeight = height;
     }
 
     async init() {
@@ -165,10 +165,14 @@ export class HUDRenderSystem implements System {
             -1, 1
         );
 
-        this.device.queue.writeBuffer(this.orthoBuffer, 0, orthoMatrix as Float32Array);
+        this.device.queue.writeBuffer(this.orthoBuffer, 0, new Float32Array(orthoMatrix));
     }
 
-    update(textComponents: Map<number, TextComponent>, depthStencilAttachment: GPURenderPassDepthStencilAttachment, currentCanvasView: GPUTextureView) {
+    update(commandEncoder: GPUCommandEncoder,
+        textComponents: Map<number, TextComponent>,
+
+        currentCanvasView: GPUTextureView,
+        depthStencilAttachment: GPURenderPassDepthStencilAttachment) {
 
         if (textComponents.size == 0)
             return;
@@ -176,30 +180,23 @@ export class HUDRenderSystem implements System {
         this.updateOrthoMatrix();
 
         // Saubere Zuweisung der aktuellen Canvas View
-        this.renderPassDescriptor = {
+        const renderPassDescriptor: GPURenderPassDescriptor = {
             label: "HUD Render Pass",
             colorAttachments: [{
                 view: currentCanvasView,
                 loadOp: 'load',
                 storeOp: 'store',
-                clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }
             }],
             depthStencilAttachment: {
                 view: depthStencilAttachment.view,
-
                 depthLoadOp: 'load',
                 depthStoreOp: 'store',
-
                 stencilLoadOp: 'load',
                 stencilStoreOp: 'store',
-
-                depthClearValue: depthStencilAttachment.depthClearValue,
-                stencilClearValue: depthStencilAttachment.stencilClearValue,
             },
         };
 
-        const commandEncoder = this.device.createCommandEncoder();
-        const passEncoder = commandEncoder.beginRenderPass(this.renderPassDescriptor);
+        const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
 
 
         passEncoder.setPipeline(this.textPipeline);
@@ -207,28 +204,19 @@ export class HUDRenderSystem implements System {
         // Globale Bindings setzen (einmal pro Pass)
         passEncoder.setBindGroup(0, this.orthoBindGroup);
         passEncoder.setBindGroup(1, this.atlasBindGroup);
-        passEncoder.setBindGroup(2, this.colorBindGroup); // Group 2 wird nur einmal gebunden
 
-        for (let [entityId, v] of textComponents.entries()) {
-            if (!v.vertexBuffer) continue;
+        for (const [id, data] of textComponents.entries()) {
+            const material = data.material;
 
-            // Farbe Uniform aktualisieren (Daten ändern sich pro Entität)
-            this.device.queue.writeBuffer(this.colorUniformBuffer, 0, v.color as Float32Array);
+            if (!data.vertexBuffer) continue;
 
-            // Vertex Buffer binden (pro Entität)
-            passEncoder.setVertexBuffer(0, v.vertexBuffer);
-            passEncoder.draw(v.vertexCount);
+            passEncoder.setPipeline(material.pipeline);
+            passEncoder.setBindGroup(2, material.constantsBindGroup);
+            passEncoder.setVertexBuffer(0, data.vertexBuffer);
+
+            passEncoder.draw(data.vertexCount);
         }
 
-
-        // ------- TEMP crosshair ----------
-        const crosshairColor = new Float32Array([1.0, 1.0, 1.0, 1.0]);
-        this.device.queue.writeBuffer(this.colorUniformBuffer, 0, crosshairColor);
-        passEncoder.setVertexBuffer(0, this.crosshairBuffer);
-        passEncoder.draw(this.crosshairVertexCount);
-        // ------- -------------- ----------
-
         passEncoder.end();
-        this.device.queue.submit([commandEncoder.finish()]);
     }
 }

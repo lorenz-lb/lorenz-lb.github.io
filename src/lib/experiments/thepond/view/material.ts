@@ -20,6 +20,9 @@ export interface MaterialProperies {
     /** illumination */
     illum?: number;
 
+    // animation
+    scrollSpeed?: number;
+    parallaxFactor?: number;
 
     // // physics based
     // /** roughness */
@@ -54,6 +57,9 @@ export class Material {
     ns!: number;
     d!: number;
     illum!: number;
+    scrollSpeed!: number;
+    parallaxFactor!: number;
+
 
     // Props
     hasTexture: boolean = false;
@@ -84,6 +90,9 @@ export class Material {
         this.d = materialData.d ?? 0;
         this.illum = materialData.illum ?? 0;
 
+        this.scrollSpeed = materialData.scrollSpeed ?? 0;
+        this.parallaxFactor = materialData.parallaxFactor ?? 1.0;
+
         this.pipeline = pipeline;
         this.createConstantGroup(device, constantsLayout);
 
@@ -102,8 +111,10 @@ export class Material {
             this.ks[0], this.ks[1], this.ks[2], 1.0,
             // Ambient Color
             this.ka[0], this.ka[1], this.ka[2], 1.0,
-            // shininess, alpha, illumination, padding
-            this.ns, this.d, this.illum, 0.0,
+            // shininess, alpha, illumination,scrollSpeed 
+            this.ns, this.d, this.illum, this.scrollSpeed,
+            //  prallaxfactor, padding
+            this.parallaxFactor, 0.0, 0.0, 0.0
         ]);
 
 
@@ -124,28 +135,15 @@ export class Material {
 
     private async createTextureGroup(device: GPUDevice, layout: GPUBindGroupLayout) {
         let textureToUse: GPUTexture;
-        // let viewToUse: GPUTextureView;
-        // let samplerToUse: GPUSampler;
 
-        if (this.map_kd) {
-            const response: Response = await fetch(this.map_kd);
-            const blob: Blob = await response.blob();
-            const imageData: ImageBitmap = await createImageBitmap(blob);
-            await this.loadImageBitmap(device, imageData);
-            textureToUse = this.texture;
-        }
-        else {
-            // FALLBACK: 1x1 white texture  
-            const whiteTexture = device.createTexture({
-                size: [1, 1],
-                format: 'rgba8unorm',
-                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-            });
-            const whiteData = new Uint8Array([255, 255, 255, 255]);
-            device.queue.writeTexture({ texture: whiteTexture }, whiteData, { bytesPerRow: 4 }, [1, 1]);
+        if (!this.map_kd)
+            return;
 
-            textureToUse = whiteTexture;
-        }
+        const response: Response = await fetch(this.map_kd);
+        const blob: Blob = await response.blob();
+        const imageData: ImageBitmap = await createImageBitmap(blob);
+        await this.loadImageBitmap(device, imageData);
+        textureToUse = this.texture;
 
         const viewDescriptor: GPUTextureViewDescriptor = {
             format: "rgba8unorm",
@@ -161,7 +159,7 @@ export class Material {
             addressModeU: "repeat",
             addressModeV: "repeat",
             minFilter: "nearest",
-            magFilter: "linear",
+            magFilter: "nearest",
             mipmapFilter: "linear",
             maxAnisotropy: 1,
         }

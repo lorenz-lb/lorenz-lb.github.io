@@ -1,6 +1,9 @@
 import { vec3 } from "gl-matrix"
 
 export interface CameraOptions {
+    right?: vec3,
+    up?: vec3,
+    forwards?: vec3,
     fov?: number,
     near?: number,
     far?: number,
@@ -17,15 +20,17 @@ export class CameraComponent {
     aspect: number;
 
 
-
-    constructor(right: vec3 = vec3.create(),
-        up: vec3 = vec3.create(),
-        forwards: vec3 = vec3.create(),
+    /*
+     * laksdjflkasdjf
+     *
+     * */
+    constructor(
         options: CameraOptions = {}
     ) {
-        this.right = right;
-        this.up = up;
-        this.forwards = forwards;
+        this.right = options.right ?? vec3.fromValues(1, 0, 0);
+        this.up = options.up ?? vec3.fromValues(0, 1, 0);
+        this.forwards = options.forwards ?? vec3.fromValues(0, 0, -1);
+
         this.fov = options.fov ?? Math.PI / 4;
         this.near = options.near ?? 0.1;
         this.far = options.far ?? 100;
