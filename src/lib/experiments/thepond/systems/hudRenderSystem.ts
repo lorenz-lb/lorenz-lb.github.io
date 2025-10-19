@@ -18,16 +18,6 @@ export class HUDRenderSystem implements System {
     private canvasHeight: number;
     private shaderModule!: GPUShaderModule;
 
-
-    // ----- TEMP Crosshair ------
-    //
-    private crosshairBuffer!: GPUBuffer;
-    private crosshairVertexCount!: number;
-    //
-    // ----- -------------- ------
-
-
-
     constructor(
         device: GPUDevice,
         width: number,
@@ -50,9 +40,6 @@ export class HUDRenderSystem implements System {
             label: 'Ortho (Group 0) Layout',
             entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: 'uniform' } }],
         });
-
-        // HINWEIS: atlasBindGroupLayout (Group 1) wird angenommen, dass es außerhalb erstellt wird.
-        // Falls Sie es hier erstellen wollen, benötigen Sie die Textur und den Sampler.
         const atlasBindGroupLayout = atlasData.atlasBindGroupLayout;
 
         const colorBindGroupLayout = this.device.createBindGroupLayout({
@@ -60,7 +47,6 @@ export class HUDRenderSystem implements System {
             entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
         });
 
-        // 3. GLOBALE BUFFER UND BIND GROUPS
         this.orthoBuffer = this.device.createBuffer({
             size: 16 * 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -81,7 +67,6 @@ export class HUDRenderSystem implements System {
             entries: [{ binding: 0, resource: { buffer: this.colorUniformBuffer } }],
         });
 
-        // 4. VERTEX LAYOUT
         this.vertexBufferLayout = {
             arrayStride: 4 * 4,
             stepMode: 'vertex',
@@ -91,7 +76,6 @@ export class HUDRenderSystem implements System {
             ],
         };
 
-        // 5. PIPELINE ERSTELLUNG
         this.textPipeline = this.device.createRenderPipeline({
             layout: this.device.createPipelineLayout({
                 bindGroupLayouts: [
@@ -108,8 +92,8 @@ export class HUDRenderSystem implements System {
             primitive: { topology: 'triangle-list' },
 
             depthStencil: {
-                //depthWriteEnabled: false,
-                //depthCompare: 'always',
+                depthWriteEnabled: false,
+                depthCompare: 'always',
                 format: 'depth24plus-stencil8',
             },
             fragment: {
@@ -125,32 +109,6 @@ export class HUDRenderSystem implements System {
             },
         });
 
-        // ------ TEMP Crosshair ----- 
-        const crosshairSize = 5.0;
-        const halfWidth = this.canvasWidth / 2;
-        const halfHeight = this.canvasHeight / 2;
-        const uv = 2.0;
-
-        const crosshairVertices = new Float32Array([
-            halfWidth - crosshairSize, halfHeight - crosshairSize, uv, uv,
-            halfWidth + crosshairSize, halfHeight + crosshairSize, uv, uv,
-            halfWidth + crosshairSize, halfHeight - crosshairSize, uv, uv,
-
-            halfWidth - crosshairSize, halfHeight - crosshairSize, uv, uv,
-            halfWidth - crosshairSize, halfHeight + crosshairSize, uv, uv,
-            halfWidth + crosshairSize, halfHeight + crosshairSize, uv, uv,
-        ]);
-
-        this.crosshairBuffer = this.device.createBuffer({
-            size: crosshairVertices.byteLength,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-            label: "HUD Crosshair Vertex Buffer"
-        });
-
-        this.device.queue.writeBuffer(this.crosshairBuffer, 0, crosshairVertices);
-        this.crosshairVertexCount = 6;
-        // -------------------------------------------------------------
-
     }
 
     private updateOrthoMatrix() {
@@ -165,14 +123,14 @@ export class HUDRenderSystem implements System {
             -1, 1
         );
 
-        this.device.queue.writeBuffer(this.orthoBuffer, 0, new Float32Array(orthoMatrix));
+        this.device.queue.writeBuffer(this.orthoBuffer, 0, orthoMatrix as Float32Array);
     }
 
     update(commandEncoder: GPUCommandEncoder,
         textComponents: Map<number, TextComponent>,
-
         currentCanvasView: GPUTextureView,
-        depthStencilAttachment: GPURenderPassDepthStencilAttachment) {
+        depthStencilAttachment: GPURenderPassDepthStencilAttachment
+    ) {
 
         if (textComponents.size == 0)
             return;
@@ -180,41 +138,40 @@ export class HUDRenderSystem implements System {
         this.updateOrthoMatrix();
 
         // Saubere Zuweisung der aktuellen Canvas View
-        const renderPassDescriptor: GPURenderPassDescriptor = {
+        const renderPassDescriptor = {
             label: "HUD Render Pass",
             colorAttachments: [{
                 view: currentCanvasView,
-                loadOp: 'load',
-                storeOp: 'store',
+                loadOp: 'load' as GPULoadOp,
+                storeOp: 'store' as GPUStoreOp,
+                clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }
             }],
             depthStencilAttachment: {
                 view: depthStencilAttachment.view,
-                depthLoadOp: 'load',
-                depthStoreOp: 'store',
-                stencilLoadOp: 'load',
-                stencilStoreOp: 'store',
+
+                depthLoadOp: 'load' as GPULoadOp,
+                depthStoreOp: 'store' as GPUStoreOp,
+
+                stencilLoadOp: 'load' as GPULoadOp,
+                stencilStoreOp: 'store' as GPUStoreOp,
             },
         };
 
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
 
-
         passEncoder.setPipeline(this.textPipeline);
 
-        // Globale Bindings setzen (einmal pro Pass)
         passEncoder.setBindGroup(0, this.orthoBindGroup);
         passEncoder.setBindGroup(1, this.atlasBindGroup);
+        passEncoder.setBindGroup(2, this.colorBindGroup);
 
-        for (const [id, data] of textComponents.entries()) {
-            const material = data.material;
+        for (let [_, v] of textComponents.entries()) {
+            if (!v.vertexBuffer) continue;
 
-            if (!data.vertexBuffer) continue;
+            this.device.queue.writeBuffer(this.colorUniformBuffer, 0, v.color as Float32Array);
 
-            passEncoder.setPipeline(material.pipeline);
-            passEncoder.setBindGroup(2, material.constantsBindGroup);
-            passEncoder.setVertexBuffer(0, data.vertexBuffer);
-
-            passEncoder.draw(data.vertexCount);
+            passEncoder.setVertexBuffer(0, v.vertexBuffer);
+            passEncoder.draw(v.vertexCount);
         }
 
         passEncoder.end();

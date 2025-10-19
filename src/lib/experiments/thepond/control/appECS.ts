@@ -12,6 +12,7 @@ import { MaterialManager, ShaderVariant } from "../view/materialManager";
 import textureShader from "../shaders/textureShader.wgsl?raw"
 import scrollShader from "../shaders/scrollShader.wgsl?raw"
 import solidShader from "../shaders/solidShader.wgsl?raw"
+import textShader from "../shaders/textShader.wgsl?raw"
 
 // ############# ASSETS #############
 import { CameraComponent } from "../components/cameraComponent";
@@ -32,8 +33,6 @@ import bg_stars from "../assets/background/2.png?url"
 import bg_clouds_1 from "../assets/background/3.png?url"
 import bg_clouds_2 from "../assets/background/4.png?url"
 
-
-
 import { FreeCamSystem } from "../systems/freeCamSystem";
 import { InputManager } from "./inputManager";
 import { FreeCamComponent } from "../components/freeCamComponent";
@@ -45,6 +44,7 @@ import { MeshManager } from "./meshManager";
 import { AssetReferenceComponent } from "../components/assetReferenceComponent";
 import { PositionManipulationSystemDEBUG } from "../systems/positionManipulationSystemDEBUG";
 import type { MaterialProperies } from "../view/material";
+import { vec4 } from "three/tsl";
 
 export class ECSApp {
     private canvas: HTMLCanvasElement;
@@ -63,14 +63,8 @@ export class ECSApp {
     readonly GLOBAL_UNIFORM_ARRAY_SIZE = 16 + 3 + 1 + 4;
     readonly GLOBAL_UNIFORM_BUFFER_SIZE = (16 * 4) + (3 * 4) + (1 * 4) + (4 * 4);
     private globalUniformBuffer!: GPUBuffer;
-    private frameGroupLayouts!: GPUBindGroupLayout;
+    private frameGroupLayout!: GPUBindGroupLayout;
     private globalBindGroup!: GPUBindGroup;
-
-    // depthStencil
-    //private depthStencilState!: GPUDepthStencilState;
-    private depthStencilBuffer!: GPUTexture;
-    private depthStencilView!: GPUTextureView;
-    private depthStencilAttachment!: GPURenderPassDepthStencilAttachment;
 
     // assets
     materialManager!: MaterialManager;
@@ -117,7 +111,6 @@ export class ECSApp {
         await this.setupDevice();
         await this.makeBindGroupLayouts();
         await this.createAssets();
-        await this.makeDepthBufferResources();
         await this.makeBindGroups();
 
         await this.initECS();
@@ -149,7 +142,7 @@ export class ECSApp {
         //await this.meshManager.loadMesh("quad", obj_quad);
 
         // material
-        this.materialManager = new MaterialManager(this.device, this.frameGroupLayouts);
+        this.materialManager = new MaterialManager(this.device, this.frameGroupLayout);
 
         // create all pipelines for each shader
         await this.materialManager.createPipeline(ShaderVariant.Textured, textureShader);
@@ -192,44 +185,10 @@ export class ECSApp {
         });
     }
 
-    async makeDepthBufferResources() {
-        const size: GPUExtent3D = {
-            width: this.canvas.width,
-            height: this.canvas.height,
-            depthOrArrayLayers: 1,
-        };
-
-        const depthBufferDescriptor: GPUTextureDescriptor = {
-            size: size,
-            format: "depth24plus-stencil8",
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
-        };
-
-        this.depthStencilBuffer = this.device.createTexture(depthBufferDescriptor);
-
-        // not needed 
-        const viewDescriptor: GPUTextureViewDescriptor = {
-            format: "depth24plus-stencil8",
-            dimension: "2d",
-            aspect: "all",
-        };
-
-        this.depthStencilView = this.depthStencilBuffer.createView(viewDescriptor);
-
-        this.depthStencilAttachment = {
-            view: this.depthStencilView,
-            depthClearValue: 1.0,
-            depthLoadOp: "clear",
-            depthStoreOp: "store",
-            stencilLoadOp: "clear",
-            stencilStoreOp: "store",
-        };
-    }
-
     async makeBindGroupLayouts() {
         // Group 0: Frame / Global Uniforms
         // eg. viewProjectionMatrix
-        this.frameGroupLayouts = this.device.createBindGroupLayout({
+        this.frameGroupLayout = this.device.createBindGroupLayout({
             entries: [{
                 binding: 0,
                 visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
@@ -247,7 +206,7 @@ export class ECSApp {
      * */
     async makeBindGroups() {
         this.globalBindGroup = this.device.createBindGroup({
-            layout: this.frameGroupLayouts,
+            layout: this.frameGroupLayout,
             entries: [{
                 binding: 0,
                 resource: { buffer: this.globalUniformBuffer },
@@ -313,7 +272,7 @@ export class ECSApp {
         let playerQuad = this.meshManager.getMesh("quad")!;
         let playerMaterial = this.materialManager.getMaterial("player")!;
         this.entityManager.addComponent(player, new TransformComponent(
-            vec3.fromValues(0, -2, -17),
+            vec3.fromValues(0, -2, -15),
             vec3.fromValues(90, 0, 0),
             vec3.fromValues(playerMaterial.texture.width / playerMaterial.texture.height, 1, 1)));
         this.entityManager.addComponent(player, new AssetReferenceComponent(playerQuad.id));
@@ -388,7 +347,7 @@ export class ECSApp {
 
         // TEXT
         this.textTL = this.entityManager.createEntity();
-        this.entityManager.addComponent(this.textTL, new TextComponent("Hello World", vec2.fromValues(0.0, 0.0), "myatas", this.materialManager.getMaterial("uiText")!));
+        this.entityManager.addComponent(this.textTL, new TextComponent("Hello World", vec2.fromValues(0.0, 0.0), "myatas"));
 
         this.gameState.activeCameraEntityID = this.camera;
     }

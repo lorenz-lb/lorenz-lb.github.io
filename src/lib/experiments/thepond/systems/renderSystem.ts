@@ -52,7 +52,7 @@ export class RenderSystem implements System {
         // renderpasses 
         this.opaqueRenderSystem.update(commandEncoder, buffer, opaqueBatches, currentTextureView, dsAttachment);
         this.alphaRenderSystem.update(commandEncoder, buffer, transparentBatches, currentTextureView, dsAttachment);
-        //this.hudRenderSystem.update(commandEncoder, textComponents, currentTextureView, dsAttachment);
+        this.hudRenderSystem.update(commandEncoder, textComponents, currentTextureView, dsAttachment);
 
         this.device.queue.submit([commandEncoder.finish()]);
     }

@@ -9,7 +9,6 @@ export class MaterialManager {
 
     private materialStore: Map<string, Material>
     private pipelineCache: Map<ShaderVariant, GPURenderPipeline>;
-    // private shaderStore: Map<ShaderVariant, string>;
 
     // GPU ressources
     private device: GPUDevice;
@@ -192,8 +191,7 @@ export class MaterialManager {
 
         if (TEXTURED_SHADER.includes(variant)) {
             selectedLayout = this.texturedPipelineLayout;
-        }
-        else {
+        } else {
             selectedLayout = this.untexturedPipelineLayout;
         }
 
@@ -203,7 +201,6 @@ export class MaterialManager {
             depthCompare: 'less-equal',
             depthWriteEnabled: true
         };
-
 
         if (doAlpha) {
             targets[0].blend = {
