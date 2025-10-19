@@ -54,8 +54,6 @@ export class InputManager {
         if (event.shiftKey) {
             if (this.shift != KeyPress.Held) { this.shift = KeyPress.Down }
         }
-
-        console.log(`DOWN: \t ${event.key} `)
     }
 
     private keyUp(event: KeyboardEvent) {
@@ -69,8 +67,6 @@ export class InputManager {
         if (event.shiftKey) {
             this.shift = KeyPress.Up;
         }
-
-        console.log(`UP: \t ${event.key}`)
     }
 
     private mouseDown(event: MouseEvent) {

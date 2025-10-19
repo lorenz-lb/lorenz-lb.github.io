@@ -56,7 +56,7 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 
     output.position = uniforms.viewProjectionMatrix * modelMatrix * input.position;
 
-    let scroll = (uniforms.time / 100) * materialUniforms.scrollSpeed * materialUniforms.parallaxFactor;
+    let scroll = (uniforms.time / 50) * materialUniforms.parallaxFactor + (uniforms.cameraPosition.x / 10 * materialUniforms.parallaxFactor);
     output.uv = vec2f(input.uv.x + scroll, 1 - input.uv.y);
 
     return output;

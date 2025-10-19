@@ -45,6 +45,8 @@ import { AssetReferenceComponent } from "../components/assetReferenceComponent";
 import { PositionManipulationSystemDEBUG } from "../systems/positionManipulationSystemDEBUG";
 import type { MaterialProperies } from "../view/material";
 import { vec4 } from "three/tsl";
+import { PlayerSystem } from "../systems/playerSystem";
+import { PlayerComponent } from "../components/playerComponent";
 
 export class ECSApp {
     private canvas: HTMLCanvasElement;
@@ -80,6 +82,7 @@ export class ECSApp {
     private renderSystem!: RenderSystem;
     private cameraSystem!: CameraSystem;
     private textMeshGeneratorSystem!: TextMeshGeneratorSystem;
+    private playerSystem!: PlayerSystem;
 
     // debug Systems
     private freeCamSystem!: FreeCamSystem;
@@ -172,9 +175,9 @@ export class ECSApp {
             ShaderVariant.ScrollingTexture);
         await this.materialManager.createMaterial("bg_stars", { name: "bg_stars", kd: vec3.create(), map_kd: bg_stars, scrollSpeed: 10.0, parallaxFactor: 0.01 } as MaterialProperies,
             ShaderVariant.ScrollingTexture);
-        await this.materialManager.createMaterial("bg_clouds_1", { name: "bg_clouds_1", kd: vec3.create(), map_kd: bg_clouds_1, scrollSpeed: 10.0, parallaxFactor: 0.2 } as MaterialProperies,
+        await this.materialManager.createMaterial("bg_clouds_1", { name: "bg_clouds_1", kd: vec3.create(), map_kd: bg_clouds_1, scrollSpeed: 10.0, parallaxFactor: 0.1 } as MaterialProperies,
             ShaderVariant.ScrollingTexture);
-        await this.materialManager.createMaterial("bg_clouds_2", { name: "bg_clouds_2", kd: vec3.create(), map_kd: bg_clouds_2, scrollSpeed: 10.0, parallaxFactor: 0.3 } as MaterialProperies,
+        await this.materialManager.createMaterial("bg_clouds_2", { name: "bg_clouds_2", kd: vec3.create(), map_kd: bg_clouds_2, scrollSpeed: 10.0, parallaxFactor: 0.15 } as MaterialProperies,
             ShaderVariant.ScrollingTexture);
 
 
@@ -227,6 +230,7 @@ export class ECSApp {
         this.positionManipulationSystem = new PositionManipulationSystemDEBUG(this.inputManager, this.meshManager);
 
         this.cameraSystem = new CameraSystem();
+        this.playerSystem = new PlayerSystem(this.inputManager);
 
         this.textMeshGeneratorSystem = new TextMeshGeneratorSystem(this.device);
 
@@ -243,6 +247,8 @@ export class ECSApp {
             new CameraComponent({ aspect: aspectRatio }));
         this.entityManager.addComponent(this.camera,
             new TransformComponent(vec3.fromValues(0, 1, 0)));
+        // temp
+        this.entityManager.addComponent(this.camera, new PlayerComponent(5));
 
         this.debugCam = this.entityManager.createEntity();
         this.entityManager.addComponent(this.debugCam,
@@ -254,12 +260,13 @@ export class ECSApp {
 
 
         // ############ Floor ############
+        const floorY = -3;
         let floor = this.entityManager.createEntity();
         let floorQuad = this.meshManager.getMesh("quad")!;
         this.entityManager.addComponent(floor, new TransformComponent(
-            vec3.fromValues(0, -3, -8),
+            vec3.fromValues(0, floorY, -8),
             vec3.fromValues(0, 0, 0),
-            vec3.fromValues(50, 50, 50)));
+            vec3.fromValues(50, 1, 50)));
         this.entityManager.addComponent(floor, new AssetReferenceComponent(floorQuad.id));
         this.entityManager.addComponent(floor, new MeshRenderComponent(
             this.materialManager.getMaterial("floor")!,
@@ -271,8 +278,9 @@ export class ECSApp {
         let player = this.entityManager.createEntity();
         let playerQuad = this.meshManager.getMesh("quad")!;
         let playerMaterial = this.materialManager.getMaterial("player")!;
+        this.entityManager.addComponent(player, new PlayerComponent(5));
         this.entityManager.addComponent(player, new TransformComponent(
-            vec3.fromValues(0, -2, -15),
+            vec3.fromValues(0, floorY + 0.5, -15),
             vec3.fromValues(90, 0, 0),
             vec3.fromValues(playerMaterial.texture.width / playerMaterial.texture.height, 1, 1)));
         this.entityManager.addComponent(player, new AssetReferenceComponent(playerQuad.id));
@@ -290,6 +298,9 @@ export class ECSApp {
 
         let bgScaling = vec3.fromValues(bgWaterMaterial.texture.width / bgWaterMaterial.texture.height, 1, 1);
         vec3.scale(bgScaling, bgScaling, 18);
+
+        const bgXY: [number, number] = [0, 5];
+
         let quad = this.meshManager.getMesh("quad")!;
 
         let bg_water = this.entityManager.createEntity();
@@ -299,7 +310,7 @@ export class ECSApp {
 
         // water 
         this.entityManager.addComponent(bg_water, new TransformComponent(
-            vec3.fromValues(0, 5, -20),
+            vec3.fromValues(...bgXY, -20),
             vec3.fromValues(90, 0, 0),
             bgScaling));
         this.entityManager.addComponent(bg_water, new AssetReferenceComponent(quad.id));
@@ -311,7 +322,7 @@ export class ECSApp {
 
         // stars  
         this.entityManager.addComponent(bg_stars, new TransformComponent(
-            vec3.fromValues(0, 5, -19.9),
+            vec3.fromValues(...bgXY, -19.9),
             vec3.fromValues(90, 0, 0),
             bgScaling));
         this.entityManager.addComponent(bg_stars, new AssetReferenceComponent(quad.id));
@@ -323,7 +334,7 @@ export class ECSApp {
 
         // clouds 1
         this.entityManager.addComponent(bg_clouds_1, new TransformComponent(
-            vec3.fromValues(0, 5, -19.8),
+            vec3.fromValues(...bgXY, -19.8),
             vec3.fromValues(90, 0, 0),
             bgScaling));
         this.entityManager.addComponent(bg_clouds_1, new AssetReferenceComponent(quad.id));
@@ -335,7 +346,7 @@ export class ECSApp {
 
         // clouds 2
         this.entityManager.addComponent(bg_clouds_2, new TransformComponent(
-            vec3.fromValues(0, 5, -19.7),
+            vec3.fromValues(...bgXY, -19.7),
             vec3.fromValues(90, 0, 0),
             bgScaling));
         this.entityManager.addComponent(bg_clouds_2, new AssetReferenceComponent(quad.id));
@@ -344,6 +355,12 @@ export class ECSApp {
             quad.vertexBuffer,
             quad.vertexCount
         ));
+
+        this.entityManager.addComponent(bg_water, new PlayerComponent(5));
+        this.entityManager.addComponent(bg_stars, new PlayerComponent(5));
+        this.entityManager.addComponent(bg_clouds_1, new PlayerComponent(5));
+        this.entityManager.addComponent(bg_clouds_2, new PlayerComponent(5));
+
 
         // TEXT
         this.textTL = this.entityManager.createEntity();
@@ -365,14 +382,11 @@ export class ECSApp {
         const freeCamComponents = this.entityManager.getComponents(FreeCamComponent);
         const textComponents = this.entityManager.getComponents(TextComponent);
         const assetRefComponents = this.entityManager.getComponents(AssetReferenceComponent);
+        const playerComponents = this.entityManager.getComponents(PlayerComponent);
 
 
         const cameraTransform = transformComponents.get(this.camera)!;
 
-        // ############### Text
-        const textComponent = textComponents.get(this.textTL)!;
-        textComponent.text = "x/z/y=" + Math.round(cameraTransform.position[0] * 10) / 10 + " " + Math.round(cameraTransform.position[1] * 10) / 10 + " " + Math.round(cameraTransform.position[2] * 10) / 10;
-        textComponent.changed = true;
 
         this.positionManipulationSystem.update(this.gameState, transformComponents, cameraComponents, assetRefComponents);
 
@@ -380,18 +394,24 @@ export class ECSApp {
         this.toggleFreeCamSystem.update(this.debugCam, this.camera, this.gameState);
         this.freeCamSystem.update(freeCamComponents, cameraComponents, transformComponents, this.gameState, dt);
         this.cameraSystem.update(cameraComponents, transformComponents)
+        this.playerSystem.update(playerComponents, transformComponents, this.gameState, dt);
 
         const selectedCamera = cameraComponents.get(this.gameState.activeCameraEntityID)!;
         const selectedCameraTransform = transformComponents.get(this.gameState.activeCameraEntityID)!;
 
-        // ############### TextMesh Creation
+        // ############### Text
+        const textComponent = textComponents.get(this.textTL)!;
+        textComponent.text = "x/z/y=" + Math.round(selectedCameraTransform.position[0] * 10) / 10 + " " + Math.round(selectedCameraTransform.position[1] * 10) / 10 + " " + Math.round(selectedCameraTransform.position[2] * 10) / 10;
+        textComponent.changed = true;
+
         this.textMeshGeneratorSystem.update(textComponents);
 
 
+        const width = 16 / 9;
         // ############### Global Uniforms 
         this.projectionMatrix = mat4.create();
         mat4.perspective(this.projectionMatrix, selectedCamera.fov, selectedCamera.aspect, selectedCamera.near, selectedCamera.far);
-
+        //mat4.frustum(this.projectionMatrix, -1 - width / 2, 1 + width / 2, -1, 1, 2, 50);
 
         const target = vec3.create();
         vec3.add(target, selectedCameraTransform.position, selectedCamera.forwards);
