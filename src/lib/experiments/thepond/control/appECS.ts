@@ -1,31 +1,40 @@
 import { vec2, vec3, mat4 } from "gl-matrix";
 import { EntityManager } from "./entityManager";
 import { GameState } from "./gameState";
-import { MatrixUpdateSystem } from "../systems/matrixUpdateSystem";
-import { RenderSystem } from "../systems/renderSystem";
-import { TransformComponent } from "../components/transformComponent";
-import { MeshRenderComponent } from "../components/meshRenderComponent";
 
-import { MaterialManager, ShaderVariant } from "../view/materialManager";
+import { MaterialManager } from "../view/materialManager";
+import { InputManager } from "./inputManager";
 
 // ############# Shader #############
 import textureShader from "../shaders/textureShader.wgsl?raw"
 import scrollShader from "../shaders/scrollShader.wgsl?raw"
 import solidShader from "../shaders/solidShader.wgsl?raw"
-import textShader from "../shaders/textShader.wgsl?raw"
+import waterShader from "../shaders/waterSurfaceShader.wgsl?raw"
+
+
+// ############# ECS #############
+// systems 
+import { FreeCamSystem } from "../systems/freeCamSystem";
+import { MatrixUpdateSystem } from "../systems/matrixUpdateSystem";
+import { RenderSystem } from "../systems/renderSystem";
+import { CameraSystem } from "../systems/cameraSystem";
+import { TextMeshGeneratorSystem } from "../systems/textMeshGeneratorSystem";
+import { ToggleFreeCamSystem } from "../systems/toggleFreeCamSystem";
+import { PositionManipulationSystemDEBUG } from "../systems/positionManipulationSystemDEBUG";
+import { PlayerSystem } from "../systems/playerSystem";
+
+// components 
+import { TransformComponent } from "../components/transformComponent";
+import { MeshRenderComponent } from "../components/meshRenderComponent";
+import { CameraComponent } from "../components/cameraComponent";
+import { FreeCamComponent } from "../components/freeCamComponent";
+import { TextComponent } from "../components/textComponent";
+import { MeshManager } from "./meshManager";
+import { AssetReferenceComponent } from "../components/assetReferenceComponent";
+import { PlayerComponent } from "../components/playerComponent";
 
 // ############# ASSETS #############
-import { CameraComponent } from "../components/cameraComponent";
-// blaster 
-import obj_blaster from "../assets/blaster/blaster-f.obj?url"
-import mat_blaster from "../assets/blaster/blaster-f.mtl?url"
-
-// grass0
-import mat_gras0 from "../assets/gras0/gras0.mtl?url"
-
-// stuatue
-import obj_statue from "../assets/statue.obj?url"
-
+import type { MaterialProperies } from "../view/material";
 // images 
 import img_player from "../assets/player/player1.png?url"
 import bg_water from "../assets/background/1.png?url"
@@ -33,20 +42,6 @@ import bg_stars from "../assets/background/2.png?url"
 import bg_clouds_1 from "../assets/background/3.png?url"
 import bg_clouds_2 from "../assets/background/4.png?url"
 
-import { FreeCamSystem } from "../systems/freeCamSystem";
-import { InputManager } from "./inputManager";
-import { FreeCamComponent } from "../components/freeCamComponent";
-import { CameraSystem } from "../systems/cameraSystem";
-import { TextComponent } from "../components/textComponent";
-import { TextMeshGeneratorSystem } from "../systems/textMeshGeneratorSystem";
-import { ToggleFreeCamSystem } from "../systems/toggleFreeCamSystem";
-import { MeshManager } from "./meshManager";
-import { AssetReferenceComponent } from "../components/assetReferenceComponent";
-import { PositionManipulationSystemDEBUG } from "../systems/positionManipulationSystemDEBUG";
-import type { MaterialProperies } from "../view/material";
-import { vec4 } from "three/tsl";
-import { PlayerSystem } from "../systems/playerSystem";
-import { PlayerComponent } from "../components/playerComponent";
 
 export class ECSApp {
     private canvas: HTMLCanvasElement;
@@ -140,45 +135,29 @@ export class ECSApp {
         // mesh
         this.meshManager = new MeshManager(this.device);
         this.meshManager.createQuad();
-        await this.meshManager.loadMesh("blaster", obj_blaster);
-        await this.meshManager.loadMesh("statue", obj_statue);
-        //await this.meshManager.loadMesh("quad", obj_quad);
 
         // material
         this.materialManager = new MaterialManager(this.device, this.frameGroupLayout);
 
         // create all pipelines for each shader
-        await this.materialManager.createPipeline(ShaderVariant.Textured, textureShader);
-        await this.materialManager.createPipeline(ShaderVariant.TexturedAlpha, textureShader, true);
-        await this.materialManager.createPipeline(ShaderVariant.Textured, textureShader);
-        await this.materialManager.createPipeline(ShaderVariant.Untextured, solidShader);
-        await this.materialManager.createPipeline(ShaderVariant.ScrollingTexture, scrollShader, true);
-
-        await this.materialManager.createPipeline(ShaderVariant.Debug, solidShader);
-
+        await this.materialManager.createPipeline("textured", textureShader, false, true);
+        await this.materialManager.createPipeline("texturedAlpha", textureShader, true, true);
+        await this.materialManager.createPipeline("untextured", solidShader);
+        await this.materialManager.createPipeline("scrollingTexture", scrollShader, true, true);
+        await this.materialManager.createPipeline("waterSurface", waterShader);
 
         // create materials from MTL files
-        await this.materialManager.loadMaterial(mat_blaster, ShaderVariant.Textured);
-        await this.materialManager.loadMaterial(mat_gras0);
-        await this.materialManager.createMaterial("uiText", { name: "uiText", kd: vec3.fromValues(1.0, 1.0, 1.0) } as MaterialProperies,
-            ShaderVariant.Untextured);
-        await this.materialManager.createMaterial("solid_red", { name: "solid_red", kd: vec3.fromValues(1.0, 0.0, 0.0) } as MaterialProperies,
-            ShaderVariant.Untextured);
-        await this.materialManager.createMaterial("floor", { name: "floor", kd: this.waterColor } as MaterialProperies,
-            ShaderVariant.Untextured);
-        await this.materialManager.createMaterial("player", { name: "player", kd: vec3.create(), map_kd: img_player } as MaterialProperies,
-            ShaderVariant.TexturedAlpha);
+        await this.materialManager.createMaterial("uiText", { name: "uiText", kd: vec3.fromValues(1.0, 1.0, 1.0) } as MaterialProperies, "untextured");
+        await this.materialManager.createMaterial("solid_red", { name: "solid_red", kd: vec3.fromValues(1.0, 0.0, 0.0) } as MaterialProperies, "untextured");
+        await this.materialManager.createMaterial("floor", { name: "floor", kd: this.waterColor } as MaterialProperies, "waterSurface");
+        await this.materialManager.createMaterial("player", { name: "player", kd: vec3.create(), map_kd: img_player } as MaterialProperies, "texturedAlpha");
 
 
         // backgrounds
-        await this.materialManager.createMaterial("bg_water", { name: "bg_water", kd: vec3.create(), map_kd: bg_water, scrollSpeed: 10.0, parallaxFactor: 0.1 } as MaterialProperies,
-            ShaderVariant.ScrollingTexture);
-        await this.materialManager.createMaterial("bg_stars", { name: "bg_stars", kd: vec3.create(), map_kd: bg_stars, scrollSpeed: 10.0, parallaxFactor: 0.01 } as MaterialProperies,
-            ShaderVariant.ScrollingTexture);
-        await this.materialManager.createMaterial("bg_clouds_1", { name: "bg_clouds_1", kd: vec3.create(), map_kd: bg_clouds_1, scrollSpeed: 10.0, parallaxFactor: 0.1 } as MaterialProperies,
-            ShaderVariant.ScrollingTexture);
-        await this.materialManager.createMaterial("bg_clouds_2", { name: "bg_clouds_2", kd: vec3.create(), map_kd: bg_clouds_2, scrollSpeed: 10.0, parallaxFactor: 0.15 } as MaterialProperies,
-            ShaderVariant.ScrollingTexture);
+        await this.materialManager.createMaterial("bg_water", { name: "bg_water", kd: vec3.create(), map_kd: bg_water, scrollSpeed: 10.0, parallaxFactor: 0.1 } as MaterialProperies, "scrollingTexture");
+        await this.materialManager.createMaterial("bg_stars", { name: "bg_stars", kd: vec3.create(), map_kd: bg_stars, scrollSpeed: 10.0, parallaxFactor: 0.01 } as MaterialProperies, "scrollingTexture");
+        await this.materialManager.createMaterial("bg_clouds_1", { name: "bg_clouds_1", kd: vec3.create(), map_kd: bg_clouds_1, scrollSpeed: 10.0, parallaxFactor: 0.1 } as MaterialProperies, "scrollingTexture");
+        await this.materialManager.createMaterial("bg_clouds_2", { name: "bg_clouds_2", kd: vec3.create(), map_kd: bg_clouds_2, scrollSpeed: 10.0, parallaxFactor: 0.15 } as MaterialProperies, "scrollingTexture");
 
 
         this.globalUniformBuffer = this.device.createBuffer({

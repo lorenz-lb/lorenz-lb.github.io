@@ -2,13 +2,15 @@ import { MTLParser, type MTLData } from "../control/objParser";
 import { Material, type MaterialProperies } from "./material";
 import { vec3 } from "gl-matrix"
 
-export enum ShaderVariant { Textured, TexturedAlpha, ScrollingTexture, Untextured, Debug };
-const TEXTURED_SHADER = [ShaderVariant.Textured, ShaderVariant.TexturedAlpha, ShaderVariant.ScrollingTexture];
+export enum ShaderTypes {
+    TexturedShader = "textured",
+    SolidShader = "solid",
+}
 
 export class MaterialManager {
 
     private materialStore: Map<string, Material>
-    private pipelineCache: Map<ShaderVariant, GPURenderPipeline>;
+    private pipelineCache: Map<string, GPURenderPipeline>;
 
     // GPU ressources
     private device: GPUDevice;
@@ -119,13 +121,13 @@ export class MaterialManager {
      * CURRENTLY ONLY MTL FILES ARE SUPPORTED!
      * ALL MATERIAL HAVE TEXTURES
      * */
-    public async loadMaterial(url: string, shaderVariant: ShaderVariant = ShaderVariant.Textured) {
+    public async loadMaterial(url: string, shaderID: string = ShaderTypes.TexturedShader) {
         const mtlMap = new Map<string, MTLData>(Object.entries(await MTLParser.readMTLFile(url)));
         console.log(mtlMap);
 
         for (const [k, v] of mtlMap) {
             if (!this.materialStore.has(k)) {
-                const pipeline = this.getPipeline(shaderVariant)!;
+                const pipeline = this.getPipeline(shaderID)!;
                 // parse MTL to generic Material type
                 const matProp = { name: v.name, kd: v.kd, map_kd: v.map_kd } as MaterialProperies;
 
@@ -142,14 +144,14 @@ export class MaterialManager {
     /*
      * crate a new Material with a shader and color
      * */
-    public async createMaterial(id: string, properties: MaterialProperies | null = null, shaderVariant: ShaderVariant = ShaderVariant.Untextured) {
+    public async createMaterial(id: string, properties: MaterialProperies | null = null, shaderID: string = ShaderTypes.SolidShader) {
 
         if (!this.materialStore.has(id)) {
             if (!properties) {
                 properties = { name: id, kd: vec3.fromValues(1.0, 1.0, 1.0) } as MaterialProperies;
             }
 
-            const pipeline = this.getPipeline(shaderVariant)!;
+            const pipeline = this.getPipeline(shaderID)!;
 
             let material = new Material();
 
@@ -179,17 +181,17 @@ export class MaterialManager {
     // #################### Pipeline Management ####################
     // #############################################################
 
-    public getPipeline(variant: ShaderVariant) {
-        if (this.pipelineCache.has(variant)) {
-            return this.pipelineCache.get(variant);
+    public getPipeline(shaderID: string) {
+        if (this.pipelineCache.has(shaderID)) {
+            return this.pipelineCache.get(shaderID);
         }
     }
 
-    public async createPipeline(variant: ShaderVariant, shaderCode: string, doAlpha = false) {
+    public async createPipeline(shaderID: string, shaderCode: string, doAlpha = false, useTexture = false) {
         let selectedLayout: GPUPipelineLayout;
         let alphaLable = "";
 
-        if (TEXTURED_SHADER.includes(variant)) {
+        if (useTexture) {
             selectedLayout = this.texturedPipelineLayout;
         } else {
             selectedLayout = this.untexturedPipelineLayout;
@@ -216,7 +218,7 @@ export class MaterialManager {
             layout: selectedLayout,
 
             vertex: {
-                module: this.device.createShaderModule({ code: shaderCode, label: `ShaderVariant:${variant}` }),
+                module: this.device.createShaderModule({ code: shaderCode, label: `ShaderVariant:${shaderID}` }),
                 entryPoint: 'vs_main',
                 buffers: [this.vertexLayout, this.instanceLayout],
             },
@@ -234,9 +236,9 @@ export class MaterialManager {
             },
 
             depthStencil: depthStencil,
-            label: `${variant} Pipeline${" " + alphaLable}`
+            label: `${shaderID} Pipeline${" " + alphaLable}`
         });
 
-        this.pipelineCache.set(variant, newPipeline);
+        this.pipelineCache.set(shaderID, newPipeline);
     }
 }
