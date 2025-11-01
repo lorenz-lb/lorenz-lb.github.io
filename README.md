@@ -15,7 +15,7 @@ cargo build
 
 in rust_wasm:
 ```bash
-wasm-pack build --target web --out-dir ../src/lib/wasm_rocessor --no-typescript 
+wasm-pack build --target web --out-dir ../src/lib/wasm_processor --no-typescript 
 ```
 
 ## Running 
