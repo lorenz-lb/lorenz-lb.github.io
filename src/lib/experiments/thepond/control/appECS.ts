@@ -31,16 +31,18 @@ import { FreeCamComponent } from "../components/freeCamComponent";
 import { TextComponent } from "../components/textComponent";
 import { MeshManager } from "./meshManager";
 import { AssetReferenceComponent } from "../components/assetReferenceComponent";
-import { PlayerComponent } from "../components/playerComponent";
+import { PlayerComponent, getPlayerAnimationData } from "../components/playerComponent";
 
 // ############# ASSETS #############
 import type { MaterialProperies } from "../view/material";
 // images 
-import img_player from "../assets/player/player1.png?url"
+import img_player from "../assets/player/playermap.png?url"
 import bg_water from "../assets/background/1.png?url"
 import bg_stars from "../assets/background/2.png?url"
 import bg_clouds_1 from "../assets/background/3.png?url"
 import bg_clouds_2 from "../assets/background/4.png?url"
+import { SpriteComponent } from "../components/spriteComponent";
+import { SpriteSystem } from "../systems/spriteSystem";
 
 
 export class ECSApp {
@@ -78,6 +80,7 @@ export class ECSApp {
     private cameraSystem!: CameraSystem;
     private textMeshGeneratorSystem!: TextMeshGeneratorSystem;
     private playerSystem!: PlayerSystem;
+    private spriteSystem!: SpriteSystem;
 
     // debug Systems
     private freeCamSystem!: FreeCamSystem;
@@ -150,7 +153,7 @@ export class ECSApp {
         await this.materialManager.createMaterial("uiText", { name: "uiText", kd: vec3.fromValues(1.0, 1.0, 1.0) } as MaterialProperies, "untextured");
         await this.materialManager.createMaterial("solid_red", { name: "solid_red", kd: vec3.fromValues(1.0, 0.0, 0.0) } as MaterialProperies, "untextured");
         await this.materialManager.createMaterial("floor", { name: "floor", kd: this.waterColor } as MaterialProperies, "waterSurface");
-        await this.materialManager.createMaterial("player", { name: "player", kd: vec3.create(), map_kd: img_player } as MaterialProperies, "texturedAlpha");
+        await this.materialManager.createMaterial("player", { name: "player", kd: vec3.create(), map_kd: img_player, spriteSheetDimension: vec2.fromValues(3, 2) } as MaterialProperies, "texturedAlpha");
 
 
         // backgrounds
@@ -210,6 +213,7 @@ export class ECSApp {
 
         this.cameraSystem = new CameraSystem();
         this.playerSystem = new PlayerSystem(this.inputManager);
+        this.spriteSystem = new SpriteSystem();
 
         this.textMeshGeneratorSystem = new TextMeshGeneratorSystem(this.device);
 
@@ -257,17 +261,19 @@ export class ECSApp {
         let player = this.entityManager.createEntity();
         let playerQuad = this.meshManager.getMesh("quad")!;
         let playerMaterial = this.materialManager.getMaterial("player")!;
+        let animationData = getPlayerAnimationData();
         this.entityManager.addComponent(player, new PlayerComponent(5));
         this.entityManager.addComponent(player, new TransformComponent(
             vec3.fromValues(0, floorY + 0.5, -15),
             vec3.fromValues(90, 0, 0),
-            vec3.fromValues(playerMaterial.texture.width / playerMaterial.texture.height, 1, 1)));
+            vec3.fromValues(animationData[0][0] / animationData[0][1], 1, 1)));
         this.entityManager.addComponent(player, new AssetReferenceComponent(playerQuad.id));
         this.entityManager.addComponent(player, new MeshRenderComponent(
             playerMaterial,
             playerQuad.vertexBuffer,
             playerQuad.vertexCount
         ));
+        this.entityManager.addComponent(player, new SpriteComponent(animationData[1], "idle"));
 
         // ############ Background ############
         let bgWaterMaterial = this.materialManager.getMaterial("bg_water")!;
@@ -362,6 +368,7 @@ export class ECSApp {
         const textComponents = this.entityManager.getComponents(TextComponent);
         const assetRefComponents = this.entityManager.getComponents(AssetReferenceComponent);
         const playerComponents = this.entityManager.getComponents(PlayerComponent);
+        const spriteComponents = this.entityManager.getComponents(SpriteComponent);
 
 
         const cameraTransform = transformComponents.get(this.camera)!;
@@ -373,7 +380,8 @@ export class ECSApp {
         this.toggleFreeCamSystem.update(this.debugCam, this.camera, this.gameState);
         this.freeCamSystem.update(freeCamComponents, cameraComponents, transformComponents, this.gameState, dt);
         this.cameraSystem.update(cameraComponents, transformComponents)
-        this.playerSystem.update(playerComponents, transformComponents, this.gameState, dt);
+        this.playerSystem.update(playerComponents, transformComponents, spriteComponents, this.gameState, dt);
+        this.spriteSystem.update(spriteComponents, renderComponents, dt * 1000);
 
         const selectedCamera = cameraComponents.get(this.gameState.activeCameraEntityID)!;
         const selectedCameraTransform = transformComponents.get(this.gameState.activeCameraEntityID)!;

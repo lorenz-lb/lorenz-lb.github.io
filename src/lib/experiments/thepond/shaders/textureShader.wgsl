@@ -9,9 +9,12 @@ struct MaterialConstants {
     illumModel: f32,
     scrollSpeed: f32,
     parallaxFactor: f32,
+    numSpritesX: f32,
+    numSpritesY: f32,
     PADDING1: f32,
+    uvOffset: vec2f,
     PADDING2: f32,
-    PADDING3: f32
+    PADDING3: f32,
 };
 
 struct Uniforms {
@@ -27,6 +30,7 @@ struct Uniforms {
 @group(1) @binding(0) var<uniform> materialUniforms : MaterialConstants; 
 @group(2) @binding(0) var textureData: texture_2d<f32>; 
 @group(2) @binding(1) var textureSampler: sampler;
+
 
 struct VertexInput {
     @location(0) position: vec4f,
@@ -54,21 +58,16 @@ fn vs_main(input: VertexInput) -> VertexOutput {
         input.modelMatrix_3
     );
 
-    let lightDirection: vec3f = normalize(vec3f(0.5, -0.5, -1.0));
     output.position = uniforms.viewProjectionMatrix * modelMatrix * input.position;
     // inverse v 
-    output.uv = vec2f(input.uv.x, 1 - input.uv.y);
-    let worldNormal = normalize((modelMatrix * input.normal).xyz);
-    let L: vec3f = -lightDirection;
-    let diffuseIntensity = max(dot(worldNormal, L), 0.5);
-
-    output.lighting_intensity = diffuseIntensity;
+    output.uv = vec2f(input.uv.x / materialUniforms.numSpritesX, ((1 - input.uv.y) / materialUniforms.numSpritesY));
 
     return output;
 }
 
      @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4f {
-    var texcolor = textureSample(textureData, textureSampler, input.uv);
+    var texcolor = textureSample(textureData, textureSampler, materialUniforms.uvOffset + input.uv);
+
     return texcolor;
 }

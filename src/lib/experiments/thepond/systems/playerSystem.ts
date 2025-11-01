@@ -3,6 +3,7 @@ import { KeyPress, type InputManager } from "../control/inputManager";
 import type { GameState } from "../control/gameState";
 import type { TransformComponent } from "../components/transformComponent";
 import type { PlayerComponent } from "../components/playerComponent";
+import type { SpriteComponent } from "../components/spriteComponent";
 
 export class PlayerSystem implements System {
 
@@ -15,6 +16,7 @@ export class PlayerSystem implements System {
     update(
         players: Map<number, PlayerComponent>,
         transforms: Map<number, TransformComponent>,
+        sprites: Map<number, SpriteComponent>,
         gameState: GameState,
         deltaTime: number,
     ) {
@@ -32,13 +34,32 @@ export class PlayerSystem implements System {
             }
 
 
-            if (this.inputManager.a == KeyPress.Down || this.inputManager.a == KeyPress.Held) {
-                transform.position[0] -= player.playerSpeed * deltaTime;
+            if (!player.fishing) {
+                if (this.inputManager.a == KeyPress.Down || this.inputManager.a == KeyPress.Held) {
+                    transform.position[0] -= player.playerSpeed * deltaTime;
+                }
+
+                if (this.inputManager.d == KeyPress.Down || this.inputManager.d == KeyPress.Held) {
+                    transform.position[0] += player.playerSpeed * deltaTime;
+                }
+            }
+
+            if (this.inputManager.f == KeyPress.Down) {
+                player.fishing = !player.fishing;
             }
 
 
-            if (this.inputManager.d == KeyPress.Down || this.inputManager.d == KeyPress.Held) {
-                transform.position[0] += player.playerSpeed * deltaTime;
+            // animations
+            const sprite = sprites.get(id);
+            if (!sprite) {
+                continue
+            }
+
+            if (player.fishing) {
+                sprite.currentAnimation = "fishing";
+            }
+            else {
+                sprite.currentAnimation = "idle";
             }
         }
 

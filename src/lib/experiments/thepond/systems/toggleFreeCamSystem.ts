@@ -17,7 +17,7 @@ export class ToggleFreeCamSystem implements System {
     ) {
 
 
-        if (this.inputManager.f == KeyPress.Up) {
+        if (this.inputManager.c == KeyPress.Up) {
             console.log("F PRESSED UP ")
             gameState.isFreeCamActive = !gameState.isFreeCamActive;
 
