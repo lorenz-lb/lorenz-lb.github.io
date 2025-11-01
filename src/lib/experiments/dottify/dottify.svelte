@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import init, { init_logging, dottify } from "$lib/wasm_processor";
+  import init, { init_logging, dottify } from "$lib/wasm_rocessor";
   import banner from "./cenna_banner.png";
 
   // svelte-ignore non_reactive_update

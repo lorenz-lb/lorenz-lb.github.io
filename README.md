@@ -1,38 +1,40 @@
-# sv
+# PortfoliOS 
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
-
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
-
-```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
 
 ## Building
-
-To create a production version of your app:
-
+Install dependencies
 ```bash
-npm run build
+npm i 
 ```
 
-You can preview the production build with `npm run preview`.
+Install rust dependencies
+```bash
+cd rust_wasm
+cargo build
+```
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+in rust_wasm:
+```bash
+wasm-pack build --target web --out-dir ../src/lib/wasm_rocessor --no-typescript 
+```
+
+## Running 
+```bash
+npm run dev -- --host
+```
+
+## Deploying
+```bash
+pnpm build && pnpx gh-pages -d build
+# if pnpm is not installed 
+# TODO :)
+```
+
+
+## Problems
+Sometime there are problems regarding the ownership of files. If so just do the following in your __HOST__ at the root of the project
+
+```bash
+sudo chown -R [your user]:[your user] .
+```
+
