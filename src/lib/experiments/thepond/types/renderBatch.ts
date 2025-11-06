@@ -8,4 +8,8 @@ export interface RenderBatch {
     vertexCount: number;
     instanceCount: number;
     instanceOffset: number;
+
+    indexed: boolean;
+    indexBuffer: GPUBuffer | null;
+    indexCount: number;
 }

@@ -4,9 +4,11 @@ import { GameState } from "./gameState";
 
 import { MaterialManager } from "../view/materialManager";
 import { InputManager } from "./inputManager";
+import { QuadTesselation } from "./quadTesselation"
 
 // ############# Shader #############
 import textureShader from "../shaders/textureShader.wgsl?raw"
+import playerShader from "../shaders/playerShader.wgsl?raw"
 import scrollShader from "../shaders/scrollShader.wgsl?raw"
 import solidShader from "../shaders/solidShader.wgsl?raw"
 import waterShader from "../shaders/waterSurfaceShader.wgsl?raw"
@@ -72,6 +74,7 @@ export class ECSApp {
     // ECS Core
     private entityManager: EntityManager;
     private inputManager: InputManager;
+    private quadTesselation!: QuadTesselation;
     private gameState: GameState;
     private lastTime: number = 0;
     // Systeme
@@ -89,6 +92,7 @@ export class ECSApp {
 
     // Entity 
     private camera!: number;
+    private player!: number;
     private debugCam!: number;
 
     // Kamera Matrizen (vereinfacht)
@@ -127,6 +131,7 @@ export class ECSApp {
 
         const adapter = await navigator.gpu.requestAdapter();
         this.device = await adapter?.requestDevice()!;
+        //this.device.addEventListener('uncapturederror', event => alert(event.error.message));
 
         this.context = this.canvas.getContext('webgpu')!;
         this.format = navigator.gpu.getPreferredCanvasFormat();
@@ -135,25 +140,79 @@ export class ECSApp {
 
     async createAssets() {
 
-        // mesh
+        // util
         this.meshManager = new MeshManager(this.device);
+        this.quadTesselation = new QuadTesselation(this.device);
+
+
         this.meshManager.createQuad();
+        let quadInputData = new Float32Array([
+            -0.5, 0.0, -0.5, 0.0, 1.0, 0.0, 0.0, 1.0,
+            -0.5, 0.0, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0,
+            0.5, 0.0, 0.5, 0.0, 1.0, 0.0, 1.0, 0.0,
+            0.5, 0.0, -0.5, 0.0, 1.0, 0.0, 1.0, 1.0,
+        ]);
+
+        //quadInputData = quadInputData.map(x => x * 100);
+
+
+        let [newData, indexData] = (await this.quadTesselation.subdivide(quadInputData))!;
+
+        const indexed = Array.from(indexData);
+        const data = Array.from(newData);
+
+        let i = 0;
+
+        const canvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById('debugCanvas')!;
+        const ctx = canvas.getContext('2d')!;
+        ctx.fillStyle = "black";
+
+        // console.log("##### INDEX:")
+        // while (i < indexed.length / 3) {
+        //     console.log(indexed.slice(i * 3, i * 3 + 3));
+        //     i++;
+        // }
+        // i = 0;
+
+        console.log("##### DATA:")
+        while (i < data.length / 8) {
+            const p1 = (data.slice(i * 8, i * 8 + 8));
+            i++;
+
+            console.log("------")
+            console.log(`(${Math.round(p1[0] * 1000) / 1000}|${Math.round(p1[1] * 1000) / 1000}|${Math.round(p1[2] * 1000) / 1000}|)`)
+            console.log(`(${Math.round(p1[3] * 1000) / 1000}|${Math.round(p1[4] * 1000) / 1000}|${Math.round(p1[5] * 1000) / 1000}|)`)
+
+            let point = [(p1[0] + 0.5) * canvas.width, (p1[2] + 0.5) * canvas.height];
+            ctx.beginPath();
+            ctx.arc(point[0], point[1], 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        console.log("length Data: " + data.length + "/" + data.length / 8);
+        console.log("length index: " + indexed.length + "/" + indexed.length / 8);
+
+
+        this.meshManager.createCustom("quadtes", newData, indexData);
 
         // material
         this.materialManager = new MaterialManager(this.device, this.frameGroupLayout);
 
         // create all pipelines for each shader
-        await this.materialManager.createPipeline("textured", textureShader, false, true);
-        await this.materialManager.createPipeline("texturedAlpha", textureShader, true, true);
-        await this.materialManager.createPipeline("untextured", solidShader);
-        await this.materialManager.createPipeline("scrollingTexture", scrollShader, true, true);
-        await this.materialManager.createPipeline("waterSurface", waterShader);
+        await this.materialManager.createPipeline({ shaderID: "textured", shaderCode: textureShader, useTexture: true });
+        await this.materialManager.createPipeline({ shaderID: "texturedAlpha", shaderCode: textureShader, doAlpha: true, useTexture: true });
+        await this.materialManager.createPipeline({ shaderID: "player", shaderCode: playerShader, doAlpha: true, useTexture: true });
+        await this.materialManager.createPipeline({ shaderID: "untextured", shaderCode: solidShader });
+        await this.materialManager.createPipeline({ shaderID: "scrollingTexture", shaderCode: scrollShader, doAlpha: true, useTexture: true });
+        await this.materialManager.createPipeline({
+            shaderID: "waterSurface", shaderCode: waterShader, topology: "triangle-list"
+        });
 
         // create materials from MTL files
         await this.materialManager.createMaterial("uiText", { name: "uiText", kd: vec3.fromValues(1.0, 1.0, 1.0) } as MaterialProperies, "untextured");
         await this.materialManager.createMaterial("solid_red", { name: "solid_red", kd: vec3.fromValues(1.0, 0.0, 0.0) } as MaterialProperies, "untextured");
         await this.materialManager.createMaterial("floor", { name: "floor", kd: this.waterColor } as MaterialProperies, "waterSurface");
-        await this.materialManager.createMaterial("player", { name: "player", kd: vec3.create(), map_kd: img_player, spriteSheetDimension: vec2.fromValues(3, 2) } as MaterialProperies, "texturedAlpha");
+        await this.materialManager.createMaterial("player", { name: "player", kd: vec3.create(), map_kd: img_player, spriteSheetDimension: vec2.fromValues(3, 2) } as MaterialProperies, "player");
 
 
         // backgrounds
@@ -202,6 +261,7 @@ export class ECSApp {
     }
 
     async initECS() {
+
         // d) ECS System Initialisierung
         this.matrixUpdateSystem = new MatrixUpdateSystem(this.device);
         this.renderSystem = new RenderSystem(this.device, this.globalBindGroup, this.context);
@@ -245,7 +305,7 @@ export class ECSApp {
         // ############ Floor ############
         const floorY = -3;
         let floor = this.entityManager.createEntity();
-        let floorQuad = this.meshManager.getMesh("quad")!;
+        let floorQuad = this.meshManager.getMesh("quadtes")!;
         this.entityManager.addComponent(floor, new TransformComponent(
             vec3.fromValues(0, floorY, -8),
             vec3.fromValues(0, 0, 0),
@@ -254,26 +314,29 @@ export class ECSApp {
         this.entityManager.addComponent(floor, new MeshRenderComponent(
             this.materialManager.getMaterial("floor")!,
             floorQuad.vertexBuffer,
-            floorQuad.vertexCount
+            floorQuad.vertexCount,
+            true,
+            floorQuad.indexBuffer,
+            floorQuad.indexCount
         ));
 
         //############ player ############
-        let player = this.entityManager.createEntity();
+        this.player = this.entityManager.createEntity();
         let playerQuad = this.meshManager.getMesh("quad")!;
         let playerMaterial = this.materialManager.getMaterial("player")!;
         let animationData = getPlayerAnimationData();
-        this.entityManager.addComponent(player, new PlayerComponent(5));
-        this.entityManager.addComponent(player, new TransformComponent(
+        this.entityManager.addComponent(this.player, new PlayerComponent(5));
+        this.entityManager.addComponent(this.player, new TransformComponent(
             vec3.fromValues(0, floorY + 0.5, -15),
             vec3.fromValues(90, 0, 0),
             vec3.fromValues(animationData[0][0] / animationData[0][1], 1, 1)));
-        this.entityManager.addComponent(player, new AssetReferenceComponent(playerQuad.id));
-        this.entityManager.addComponent(player, new MeshRenderComponent(
+        this.entityManager.addComponent(this.player, new AssetReferenceComponent(playerQuad.id));
+        this.entityManager.addComponent(this.player, new MeshRenderComponent(
             playerMaterial,
             playerQuad.vertexBuffer,
             playerQuad.vertexCount
         ));
-        this.entityManager.addComponent(player, new SpriteComponent(animationData[1], "idle"));
+        this.entityManager.addComponent(this.player, new SpriteComponent(animationData[1], "idle"));
 
         // ############ Background ############
         let bgWaterMaterial = this.materialManager.getMaterial("bg_water")!;
@@ -372,6 +435,7 @@ export class ECSApp {
 
 
         const cameraTransform = transformComponents.get(this.camera)!;
+        const playerTransform = transformComponents.get(this.player)!;
 
 
         this.positionManipulationSystem.update(this.gameState, transformComponents, cameraComponents, assetRefComponents);
@@ -394,7 +458,6 @@ export class ECSApp {
         this.textMeshGeneratorSystem.update(textComponents);
 
 
-        const width = 16 / 9;
         // ############### Global Uniforms 
         this.projectionMatrix = mat4.create();
         mat4.perspective(this.projectionMatrix, selectedCamera.fov, selectedCamera.aspect, selectedCamera.near, selectedCamera.far);
@@ -416,6 +479,9 @@ export class ECSApp {
         globalUniformArray[18] = cameraTransform.position[2];
         globalUniformArray[19] = 0.0; // padding
         globalUniformArray[20] = timeInSeconds;
+        globalUniformArray[21] = playerTransform.position[0];
+        globalUniformArray[22] = playerTransform.position[1];
+        globalUniformArray[23] = playerTransform.position[2];
 
         this.device.queue.writeBuffer(
             this.globalUniformBuffer,

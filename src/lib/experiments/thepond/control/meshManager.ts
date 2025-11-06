@@ -3,13 +3,12 @@ import { OBJParser } from "./objParser";
 interface MeshData {
     id: string;
     vertexBuffer: GPUBuffer;
-    // todo was ist das 
     indexBuffer?: GPUBuffer;
-    drawGroups: Array<{ materialName: string, count: number, startIndex: number }>
-    vertexCount: number
-
+    indexCount?: number;
+    drawGroups: Array<{ materialName: string, count: number, startIndex: number }>;
+    vertexCount: number;
     localVertices: Float32Array;
-    //localIndices?: Uint16Array | Uint32Array;
+    indexed?: boolean;
 }
 
 export class MeshManager {
@@ -77,6 +76,53 @@ export class MeshManager {
             drawGroups: groups,
             localVertices: vertices
         } as MeshData)
+    }
+
+    public createCustom(label: string, vertices: Float32Array, indicies: Uint32Array | null = null) {
+        const vertexCount = vertices.length / 8;
+        const vertexBuffer = this.device.createBuffer({
+            size: vertices.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true,
+            label: label
+        });
+
+        new Float32Array(vertexBuffer.getMappedRange()).set(vertices);
+        vertexBuffer.unmap();
+
+        const groups = [
+            {
+                materialName: "PLACEHOLDER",
+                startIndex: 0,
+                count: vertexCount
+            }
+        ];
+
+        let meshData = {
+            id: label,
+            vertexBuffer: vertexBuffer,
+            vertexCount: vertexCount,
+            drawGroups: groups,
+            localVertices: vertices
+        } as MeshData;
+
+        if (indicies) {
+            const indexBuffer = this.device.createBuffer({
+                size: indicies.byteLength,
+                usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.INDEX | GPUBufferUsage.COPY_SRC,
+                mappedAtCreation: true,
+                label: `${label} index`
+            });
+
+            new Uint32Array(indexBuffer.getMappedRange()).set(indicies);
+            indexBuffer.unmap();
+
+            meshData.indexed = true;
+            meshData.indexCount = indicies.length;
+            meshData.indexBuffer = indexBuffer;
+        }
+
+        this.meshStore.set(label, meshData);
     }
 
     public getLocalVertices(id: string): Float32Array | undefined {

@@ -35,6 +35,7 @@
         height={1080 * 0.8}
         tabindex="0"
       ></canvas>
+      <canvas id="debugCanvas" width={200} height={200}> </canvas>
       <div class="flex space-x-10">
         <p>Key:</p>
         <p bind:this={text_key}></p>

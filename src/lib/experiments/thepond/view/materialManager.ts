@@ -7,6 +7,15 @@ export enum ShaderTypes {
     SolidShader = "solid",
 }
 
+export interface PipelineSettings {
+    shaderID: string,
+    shaderCode: string,
+
+    doAlpha?: boolean,
+    useTexture?: boolean,
+    topology?: GPUPrimitiveTopology
+}
+
 export class MaterialManager {
 
     private materialStore: Map<string, Material>
@@ -192,7 +201,13 @@ export class MaterialManager {
         }
     }
 
-    public async createPipeline(shaderID: string, shaderCode: string, doAlpha = false, useTexture = false) {
+
+    public async createPipeline(pipelineSettings: PipelineSettings) {
+        const doAlpha = pipelineSettings.doAlpha ?? false;
+        const useTexture = pipelineSettings.useTexture ?? false;
+        const topology = pipelineSettings.topology ?? "triangle-list";
+
+
         let selectedLayout: GPUPipelineLayout;
         let alphaLable = "";
 
@@ -223,27 +238,27 @@ export class MaterialManager {
             layout: selectedLayout,
 
             vertex: {
-                module: this.device.createShaderModule({ code: shaderCode, label: `ShaderVariant:${shaderID}` }),
+                module: this.device.createShaderModule({ code: pipelineSettings.shaderCode, label: `ShaderVariant:${pipelineSettings.shaderID}` }),
                 entryPoint: 'vs_main',
                 buffers: [this.vertexLayout, this.instanceLayout],
             },
 
             fragment: {
-                module: this.device.createShaderModule({ code: shaderCode }),
+                module: this.device.createShaderModule({ code: pipelineSettings.shaderCode }),
                 entryPoint: 'fs_main',
                 targets: targets,
             },
 
             primitive: {
-                topology: 'triangle-list',
+                topology: topology,
                 // TODO SET BACKFACECULLING WHEN FINISH
                 cullMode: 'none',
             },
 
             depthStencil: depthStencil,
-            label: `${shaderID} Pipeline${" " + alphaLable}`
+            label: `${pipelineSettings.shaderID} Pipeline${" " + alphaLable}`
         });
 
-        this.pipelineCache.set(shaderID, newPipeline);
+        this.pipelineCache.set(pipelineSettings.shaderID, newPipeline);
     }
 }

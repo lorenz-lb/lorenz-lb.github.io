@@ -96,6 +96,10 @@ export class MatrixUpdateSystem implements System {
                         instanceOffset: matrixOffsetIndex,
 
                         isTransparent: entity.isTransparent,
+
+                        indexed: entity.render.indexed,
+                        indexBuffer: entity.render.indexBuffer,
+                        indexCount: entity.render.indexCount
                     } as RenderBatch;
 
 

@@ -68,6 +68,5 @@ fn vs_main(input: VertexInput) -> VertexOutput {
      @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4f {
     var texcolor = textureSample(textureData, textureSampler, materialUniforms.uvOffset + input.uv);
-
     return texcolor;
 }
