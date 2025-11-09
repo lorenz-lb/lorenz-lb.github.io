@@ -2,6 +2,9 @@ import type { System } from "./system";
 import { KeyPress, type InputManager } from "../control/inputManager";
 import type { GameState } from "../control/gameState";
 
+/**
+ * Allows the switch between the main Camera and the debug / freecam
+ */
 export class ToggleFreeCamSystem implements System {
 
     private inputManager: InputManager;
@@ -15,8 +18,6 @@ export class ToggleFreeCamSystem implements System {
         mainCamID: number,
         gameState: GameState,
     ) {
-
-
         if (this.inputManager.c == KeyPress.Up) {
             console.log("F PRESSED UP ")
             gameState.isFreeCamActive = !gameState.isFreeCamActive;

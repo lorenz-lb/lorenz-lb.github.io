@@ -5,6 +5,12 @@ import type { TransformComponent } from "../components/transformComponent";
 import type { PlayerComponent } from "../components/playerComponent";
 import type { SpriteComponent } from "../components/spriteComponent";
 
+
+/**
+ * Default movementsystem for player when Freecam is toggled off
+ *
+ * Handles movement and player state with coresponding animations
+ */
 export class PlayerSystem implements System {
 
     private inputManager: InputManager;
@@ -21,7 +27,6 @@ export class PlayerSystem implements System {
         deltaTime: number,
     ) {
 
-
         if (gameState.isFreeCamActive)
             return;
 
@@ -32,7 +37,6 @@ export class PlayerSystem implements System {
             if (!transform) {
                 continue;
             }
-
 
             if (!player.fishing) {
                 if (this.inputManager.a == KeyPress.Down || this.inputManager.a == KeyPress.Held) {
@@ -48,7 +52,6 @@ export class PlayerSystem implements System {
                 player.fishing = !player.fishing;
             }
 
-
             // animations
             const sprite = sprites.get(id);
             if (!sprite) {
@@ -62,6 +65,5 @@ export class PlayerSystem implements System {
                 sprite.currentAnimation = "idle";
             }
         }
-
     }
 }

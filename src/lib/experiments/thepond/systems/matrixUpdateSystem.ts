@@ -1,7 +1,6 @@
 import { type TransformComponent } from '../components/transformComponent';
 import { type MeshRenderComponent } from '../components/meshRenderComponent';
 import { mat4, vec3 } from 'gl-matrix';
-import { Deg2Rad } from '../model/math_stuff';
 import type { System } from './system';
 import type { RenderBatch } from '../types/renderBatch';
 
@@ -11,6 +10,15 @@ export interface RenderDataOutput {
     transparentBatches: RenderBatch[];
 }
 
+function Deg2Rad(theta: number): number {
+    return theta * Math.PI / 180;
+}
+
+/**
+ * Creates renderable data by combining the transform components and the camera position 
+ * Batches the data to have fewer switches of the GPU Pipeline which is critical for performance
+ * Also sorts the renderable data because Transparent objects cant write to the depth buffer.
+ */
 export class MatrixUpdateSystem implements System {
     private device: GPUDevice;
     private instanceBuffer: GPUBuffer;

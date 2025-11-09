@@ -1,7 +1,9 @@
+/**
+ * Global shared state
+ */
 export class GameState {
     isFreeCamActive: boolean;
     activeCameraEntityID: number;
-
 
     // debug
     isDebug: boolean;

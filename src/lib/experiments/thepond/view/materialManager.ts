@@ -16,8 +16,10 @@ export interface PipelineSettings {
     topology?: GPUPrimitiveTopology
 }
 
+/**
+ * Class for managing the creation, caching and retrieving of materials and coresponding GPU pipelines, needed for rendering a material
+ */
 export class MaterialManager {
-
     private materialStore: Map<string, Material>
     private pipelineCache: Map<string, GPURenderPipeline>;
 
@@ -29,7 +31,6 @@ export class MaterialManager {
     private untexturedPipelineLayout: GPUPipelineLayout;
     private frameGroupLayout: GPUBindGroupLayout;
 
-    // const
     private vertexLayout;
     private instanceLayout;
 
@@ -64,11 +65,6 @@ export class MaterialManager {
                     visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
-                // {
-                // binding: 1,
-                // visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-                // buffer: { type: "uniform" }
-                // },
             ],
             label: "MaterialConstantLayout",
         });
@@ -107,14 +103,14 @@ export class MaterialManager {
                 {
                     shaderLocation: 2,
                     format: "float32x2",
-                    offset: 24 /**2 4 byte numbers**/,
+                    offset: 24,
                 }
 
             ],
         }
 
         this.instanceLayout = {
-            arrayStride: 16 * 4, // 64 Bytes für mat4
+            arrayStride: 16 * 4,
             stepMode: 'instance',
             attributes: [
                 { shaderLocation: 4, offset: 0, format: 'float32x4' },
@@ -129,34 +125,8 @@ export class MaterialManager {
     // #############################################################
     // #################### Material Management ####################
     // #############################################################
-
-    /**
-     * loads a material file, creates GPU materials and stores them
-     * CURRENTLY ONLY MTL FILES ARE SUPPORTED!
-     * ALL MATERIAL HAVE TEXTURES
-     * */
-    public async loadMaterial(url: string, shaderID: string = ShaderTypes.TexturedShader) {
-        const mtlMap = new Map<string, MTLData>(Object.entries(await MTLParser.readMTLFile(url)));
-        console.log(mtlMap);
-
-        for (const [k, v] of mtlMap) {
-            if (!this.materialStore.has(k)) {
-                const pipeline = this.getPipeline(shaderID)!;
-                // parse MTL to generic Material type
-                const matProp = { name: v.name, kd: v.kd, map_kd: v.map_kd } as MaterialProperies;
-
-                let material = new Material();
-                await material.init(this.device, matProp, pipeline, this.constantLayout, this.textureLayout);
-
-                this.materialStore.set(k, material);
-            }
-        }
-
-        console.log(`Materials loaded: ${Array.from(this.materialStore.keys())}`)
-    }
-
     /*
-     * crate a new Material with a shader and color
+     * Crate a new Material with a shader and color
      * */
     public async createMaterial(id: string, properties: MaterialProperies | null = null, shaderID: string = ShaderTypes.SolidShader) {
 
@@ -201,12 +171,13 @@ export class MaterialManager {
         }
     }
 
-
+    /*
+     * Crate a new pipeline configured for a (group of) material(s)  
+     * */
     public async createPipeline(pipelineSettings: PipelineSettings) {
         const doAlpha = pipelineSettings.doAlpha ?? false;
         const useTexture = pipelineSettings.useTexture ?? false;
         const topology = pipelineSettings.topology ?? "triangle-list";
-
 
         let selectedLayout: GPUPipelineLayout;
         let alphaLable = "";
@@ -251,7 +222,7 @@ export class MaterialManager {
 
             primitive: {
                 topology: topology,
-                // TODO SET BACKFACECULLING WHEN FINISH
+                // TODO: use culling if needed
                 cullMode: 'none',
             },
 

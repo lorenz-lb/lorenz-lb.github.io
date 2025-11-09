@@ -42,7 +42,7 @@ struct VertexOutput {
     @builtin(position) position: vec4f,
     @location(0) uv: vec2f,
     @location(2) worldPos: vec3f,
-    @location(3) @interpolate(flat) worldNormal: vec3f,
+    @location(3) @interpolate(flat)  worldNormal: vec3f,
 };
 
 @vertex
@@ -64,7 +64,8 @@ fn vs_main(@builtin(vertex_index) vertex_idx: u32, input: VertexInput) -> Vertex
     // ####### wave 1 #########
     let amplitude1 = 0.2f;
     let frequenz1 = 41f;
-    let speed1 = -0.05f;
+    let speed1 = -0.05f ;
+
 
     let time_term1 = frequenz1 * (px - speed1 * uniforms.time);
     let offset_y1 = amplitude1 * sin(time_term1);
@@ -73,22 +74,44 @@ fn vs_main(@builtin(vertex_index) vertex_idx: u32, input: VertexInput) -> Vertex
     // ####### wave 2 #########
     let amplitude2 = 0.2f;
     let frequenz2 = 119f;
-    let speed2 = -0.01f;
+    let speed2 = -0.01f ;
 
     let time_term2 = frequenz2 * (pz - speed2 * uniforms.time);
     let offset_y2 = amplitude2 * (sin(time_term2));
     let slope2 = amplitude2 * frequenz2 * cos(time_term2);
 
+    // ####### wave 3 #########
+    let amplitude3 = 0.2f;
+    let frequenz3 = 119f;
+    let speed3 = -0.01f ;
+
+    let time_term3 = frequenz3 * (pz + px - speed3 * uniforms.time);
+    let offset_y3 = amplitude3 * (sin(time_term3));
+    let slope3 = amplitude3 * frequenz3 * cos(time_term3);
+
+
+
     // ### combine waves ###
-    var total_offset_y = offset_y2 + offset_y1;
+    var total_offset_y = offset_y2 + offset_y1 + offset_y3;
+    total_offset_y = 0;
     let animatedWorldPos = worldPos + vec3f(0, total_offset_y, 0);
 
+
     // ####### normals #########
-    let correctedNormal = normalize(vec3f(
-        baseNormal.x * 1.0 + baseNormal.y * slope1,
-        baseNormal.y * 1.0,
-        baseNormal.z * 1.0 + baseNormal.y * slope2
+    var correctedNormal = normalize(vec3f(
+        (-slope1),
+        (1),
+        (-slope2)
     ));
+
+    if vertex_idx % 16 == 0 {
+        correctedNormal = normalize(vec3f(
+            (1),
+            (1),
+            (1)
+        ));
+    }
+
 
     let worldNormal = normalize((modelMatrix * vec4f(correctedNormal, 0.0)).xyz);
 
@@ -104,12 +127,13 @@ fn vs_main(@builtin(vertex_index) vertex_idx: u32, input: VertexInput) -> Vertex
 fn fs_main(input: VertexOutput) -> @location(0) vec4f {
 
     let N: vec3f = normalize(input.worldNormal);
-    let L: vec3f = normalize(vec3f(0.5, 1, 0.1));
+    let L: vec3f = normalize(-vec3f(0.5, -1, 0.5));
     let diffuseIntensity = max(dot(N, L), 0.0) ;
     let ambient: f32 = 0.8;
     let totalIntensity = ambient + diffuseIntensity;
 
-    let finalColor = materialUniforms.kdColor * totalIntensity ;
+    var finalColor = materialUniforms.kdColor * totalIntensity ;
+    finalColor = vec4(input.worldNormal.xyz, 1.0);
 
     return vec4f(finalColor.xyz, 1.0);
 }

@@ -6,6 +6,9 @@ export interface AnimationStep {
   uv: vec2;
 }
 
+/**
+ * Component to render animated textures
+*/
 export class SpriteComponent {
   animations: Map<string, AnimationStep[]>;
   currentAnimation: string;

@@ -11,6 +11,9 @@ interface MeshData {
     indexed?: boolean;
 }
 
+/**
+ * Manages mesh data to not save the same data multiple times and enableing GPU instancing
+ */
 export class MeshManager {
     private meshStore: Map<string, MeshData>;
     private device: GPUDevice;
@@ -20,25 +23,17 @@ export class MeshManager {
         this.device = device;
     }
 
+    /**
+     *  Returns a mesh identified by its id
+    */
     public getMesh(id: string): MeshData | undefined {
         return this.meshStore.get(id);
     }
 
-    public async loadMesh(id: string, url: string) {
-        const mesh = await OBJParser.createMesh(this.device, url, id);
-
-        this.meshStore.set(id, {
-            id: id,
-            vertexBuffer: mesh.buffer,
-            vertexCount: mesh.count,
-            drawGroups: mesh.groups,
-            localVertices: mesh.vertices
-        } as MeshData)
-    }
-
-
+    /**
+     * Creates a square quad and caches it
+    */
     public createQuad(label: string = "quad") {
-
         const vertices = new Float32Array([
             -0.5, 0.0, -0.5, 0.0, 1.0, 0.0, 0.0, 1.0,
             -0.5, 0.0, 0.5, 0.0, 1.0, 0.0, 0.0, 0.0,
@@ -69,8 +64,8 @@ export class MeshManager {
             }
         ];
 
-        this.meshStore.set("quad", {
-            id: "quad",
+        this.meshStore.set(label, {
+            id: label,
             vertexBuffer: buffer,
             vertexCount: vertexCount,
             drawGroups: groups,
@@ -78,6 +73,11 @@ export class MeshManager {
         } as MeshData)
     }
 
+    /**
+     * Creates and saves the GPU ressources for a custom mesh.
+     *
+     * If indicies not null the mesh will be rendered using indexed rendering.
+     */
     public createCustom(label: string, vertices: Float32Array, indicies: Uint32Array | null = null) {
         const vertexCount = vertices.length / 8;
         const vertexBuffer = this.device.createBuffer({

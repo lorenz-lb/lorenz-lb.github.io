@@ -10,6 +10,9 @@ export interface CameraOptions {
     aspect?: number,
 }
 
+/**
+ * Component for camerasettings needed for rendering 
+ */
 export class CameraComponent {
     right: vec3;
     up: vec3;
@@ -19,11 +22,6 @@ export class CameraComponent {
     far: number;
     aspect: number;
 
-
-    /*
-     * laksdjflkasdjf
-     *
-     * */
     constructor(
         options: CameraOptions = {}
     ) {

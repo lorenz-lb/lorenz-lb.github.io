@@ -2,15 +2,25 @@ import { vec3, mat4, vec4 } from 'gl-matrix';
 import { TransformComponent } from "../components/transformComponent";
 import { AssetReferenceComponent } from "../components/assetReferenceComponent";
 import { MeshManager } from "../control/meshManager";
-import { Deg2Rad } from '../model/math_stuff';
 
 export interface RaycastHitResult {
     entityID: number;
     distance: number;
 }
 
+function Deg2Rad(theta: number): number {
+    return theta * Math.PI / 180;
+}
+
+/**
+ * Raycaster to cast a ray in a direction
+ * CURRENTLY ONLY USED IN DEBUG MODE
+ */
 export class Raycaster {
 
+    /**
+     * Casts a ray in a direction and returns the entity and distance of first hit
+    */
     public cast(
         rayOrigin: vec3,
         rayDirection: vec3,
@@ -41,8 +51,6 @@ export class Raycaster {
         return { entityID: nearestHitID, distance: minDistance };
     }
 
-
-
     private findClosestHitOnMesh(
         rayOrigin: vec3,
         rayDirection: vec3,
@@ -54,29 +62,19 @@ export class Raycaster {
         let minDistance: number = Infinity;
 
         const modelMatrix = mat4.create();
-
-        // --------------------------------------------------------------------------
-        // KORRIGIERTE MODEL MATRIX BERECHNUNG (entsprechend MatrixUpdateSystem)
-        // Reihenfolge: Translation -> Rotation X/Y/Z -> Skalierung (T*R*S)
-        // --------------------------------------------------------------------------
         mat4.identity(modelMatrix);
 
-        // 1. Translation
         mat4.translate(modelMatrix, modelMatrix, transform.position);
 
-        // 2. Rotation (Wichtig: Deg2Rad verwenden, falls Eulers in Grad sind, wie in MatrixUpdateSystem)
         mat4.rotateX(modelMatrix, modelMatrix, Deg2Rad(transform.eulers[0]));
         mat4.rotateY(modelMatrix, modelMatrix, Deg2Rad(transform.eulers[1]));
         mat4.rotateZ(modelMatrix, modelMatrix, Deg2Rad(transform.eulers[2]));
 
-        // 3. Skalierung (Hinzugefügt)
         mat4.scale(modelMatrix, modelMatrix, transform.scale);
 
-        // --------------------------------------------------------------------------
 
-        const stride = 8; // Annahme: 3 Position + 5 andere Attribute = 8 Float-Werte pro Vertex
+        const stride = 8;
 
-        // Wiederverwendbare temporäre Vektoren
         const localP = vec3.create();
         const p1 = vec3.create();
         const p2 = vec3.create();
@@ -85,7 +83,6 @@ export class Raycaster {
 
         for (let i = 0; i < vertices.length; i += stride * 3) {
 
-            // --- 1. Holen der lokalen Eckpunkte und Transformation in den World Space ---
             // P1
             vec3.set(localP, vertices[i + 0], vertices[i + 1], vertices[i + 2]);
             vec4.set(tempVec4, localP[0], localP[1], localP[2], 1.0);
@@ -105,7 +102,6 @@ export class Raycaster {
             vec3.set(p3, tempVec4[0], tempVec4[1], tempVec4[2]);
 
 
-            // --- 2. Ray-Triangle-Test ---
             const hitDistance = this.mollerTrumbore(rayOrigin, rayDirection, p1, p2, p3);
 
             if (hitDistance !== null && hitDistance > 0 && hitDistance < minDistance) {

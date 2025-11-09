@@ -1,7 +1,7 @@
 import { vec2, vec3 } from "gl-matrix"
 
 /**
- * Material Properties like 
+ * Material Properties to describe a renderable material 
  */
 export interface MaterialProperies {
     name: string;
@@ -49,7 +49,6 @@ export interface MaterialProperies {
  * Thus this class abstracts all material apects needed to perform computation within webgpu
  */
 export class Material {
-    // Material Props 
     name!: string;
     kd!: vec3;
     map_kd!: string | null;
@@ -61,7 +60,6 @@ export class Material {
     scrollSpeed!: number;
     parallaxFactor!: number;
     spriteSheetDimension!: vec2;
-
 
     // Props
     hasTexture: boolean = false;
@@ -100,25 +98,31 @@ export class Material {
         this.pipeline = pipeline;
         this.createConstantGroup(device, constantsLayout);
 
-        // only texture if needed
         if (this.map_kd && textureLayout) {
             await this.createTextureGroup(device, textureLayout);
             this.hasTexture = true;
         }
     }
 
+    /**
+     * Sets the uvOffset in the material to enable sprite sheet animations
+    */
     public setAnimationData(uvOffset: vec2) {
-        const offset = 20 * 4;
+        const bufferOffset = 20 * 4;
 
         const animationData = new Float32Array([uvOffset[0], uvOffset[1], 0, 0]);
 
         this.device.queue.writeBuffer(
             this.constantsBuffer,
-            offset,
+            bufferOffset,
             animationData
         );
     }
 
+    /**
+     * Creates the buffer which is dispatched to the GPU to descripte the material properties
+     * to be used in the shader
+    */
     private createConstantGroup(device: GPUDevice, layout: GPUBindGroupLayout) {
         const constantsData = new Float32Array([
             // Diffuse Color
@@ -134,7 +138,6 @@ export class Material {
             // animationdata uv + padding
             0, 0, 0, 0
         ]);
-
 
         this.constantsBuffer = device.createBuffer({
             size: constantsData.byteLength,

@@ -1,13 +1,24 @@
 import shaderCode from "../shaders/subdivision.wgsl?raw"
 
-export class QuadTesselation {
+/**
+ * Util class to subdivide a quad into a surface with more detail
+ *
+ * This class uses GPU Compute Shader to perform the calculations.
+ * Technically the use of GPU Compute Shaders is not needed because
+ * subdivision is not done in realtime but ahead of time.
+ */
+export class Subdivider {
     device: GPUDevice;
 
     computePipeline!: GPUComputePipeline;
     bindGroupLayout!: GPUBindGroupLayout;
 
-    private readonly GRID_SIZE_X: number = 4 * 8.0;
-    private readonly GRID_SIZE_Y: number = 4 * 8.0;
+    // private readonly GRID_SIZE_X: number = Math.pow(2, 10);
+    // private readonly GRID_SIZE_Y: number = Math.pow(2, 10);
+
+    private readonly GRID_SIZE_X: number = Math.pow(2, 4);
+    private readonly GRID_SIZE_Y: number = Math.pow(2, 4);
+
     private readonly TOTAL_POINTS = this.GRID_SIZE_X * this.GRID_SIZE_Y;
     private readonly NUM_INDEX_BUFFER_ELEMENTS = 4 * 3 * (((this.GRID_SIZE_X - 1) * 2) * (this.GRID_SIZE_Y - 1));
     private readonly POINT_SIZE = (3 + 3 + 2) * 4;
@@ -96,8 +107,18 @@ export class QuadTesselation {
     }
 
 
+    /**
+     * Subdivides a quad to create more detail
+     *
+     * @param  quad - A Float32Array of Points defined in CCW
+     * Each Point consits of 8 floats
+     * - XYZ Position
+     * - XYZ Normal
+     * - UV Texturemapping
+     *
+     *  @returns a Float32Array with the linearly interpolated points and a Uint32Array representing an index list of tris
+     */
     public async subdivide(quad: Float32Array): Promise<[Float32Array, Uint32Array]> {
-
         if (!this.inputQuadBuffer) {
             this.inputQuadBuffer = this.device.createBuffer({
                 label: 'Input Quad Corner Buffer',
@@ -121,6 +142,7 @@ export class QuadTesselation {
             ],
         });
 
+        // ##### COMPUTE PASS #####
         let commandEncoder = this.device.createCommandEncoder();
         const computePass = commandEncoder.beginComputePass({
             label: 'Quad Subdivision Compute Pass',
@@ -129,12 +151,13 @@ export class QuadTesselation {
         computePass.setPipeline(this.computePipeline);
         computePass.setBindGroup(0, bindGroup);
 
-        const dispatchX = Math.ceil(this.GRID_SIZE_X * 2);
-        const dispatchY = Math.ceil(this.GRID_SIZE_Y * 2);
-
+        // dispatch enough threads to handle all points on the grid
+        const workgroupSize = 8;
+        const dispatchX = Math.ceil(this.GRID_SIZE_X / workgroupSize);
+        const dispatchY = Math.ceil(this.GRID_SIZE_Y / workgroupSize);
         computePass.dispatchWorkgroups(dispatchX, dispatchY);
-
         computePass.end();
+        // ##### END COMPUTE PASS #####
 
         commandEncoder.copyBufferToBuffer(
             this.outputPointsBuffer,

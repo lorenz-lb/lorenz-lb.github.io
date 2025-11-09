@@ -7,6 +7,12 @@ import type { System } from "./system";
 import { HUDRenderSystem } from "./hudRenderSystem";
 
 
+/**
+ * Renders with three passes
+ * 1. Opaque
+ * 2. Transparent
+ * 3. UI / Orthogonal
+ */
 export class RenderSystem implements System {
 
     private device: GPUDevice;

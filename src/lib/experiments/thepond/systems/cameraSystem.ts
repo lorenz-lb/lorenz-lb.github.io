@@ -1,9 +1,7 @@
 import { vec3, mat4 } from "gl-matrix"
 import type { System } from "./system";
-import type { InputManager } from "../control/inputManager";
 import type { CameraComponent } from "../components/cameraComponent";
 import type { TransformComponent } from "../components/transformComponent";
-
 
 export class CameraSystem implements System {
     update(
@@ -29,6 +27,6 @@ export class CameraSystem implements System {
             vec3.set(cameraComponent.right, rotationMatrix[0], rotationMatrix[1], rotationMatrix[2]);
             vec3.set(cameraComponent.forwards, rotationMatrix[8], rotationMatrix[9], rotationMatrix[10]);
             vec3.negate(cameraComponent.forwards, cameraComponent.forwards);
+        }
     }
-}
 }

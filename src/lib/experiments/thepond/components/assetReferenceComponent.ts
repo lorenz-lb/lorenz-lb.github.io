@@ -1,3 +1,6 @@
+/**
+ * Marker Component to reference a mesh
+*/
 export class AssetReferenceComponent {
   public meshID: string;
 

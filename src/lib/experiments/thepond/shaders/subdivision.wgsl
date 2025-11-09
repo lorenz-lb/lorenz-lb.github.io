@@ -26,6 +26,8 @@ struct Point {
 @group(0) @binding(2) var<storage, read_write> output_points: array<Point>;
 @group(0) @binding(3) var<storage, read_write> output_index: array<u32>;
 
+override blockSize = 8;
+
 
 fn generatePoints(x: u32, y: u32) {
     var index: u32 = ((y * uniforms.gridDim.x) + x);
@@ -90,14 +92,17 @@ fn createIndex(x: u32, y: u32) {
     }
 }
 
-    @compute @workgroup_size(16, 16)
+@compute @workgroup_size(blockSize, blockSize)
 fn main(
     @builtin(global_invocation_id) global_id: vec3<u32 >
 ) {
     let total_points: u32 = uniforms.gridDim.x * uniforms.gridDim.y;
 
-    let x = (global_id.x * global_id.y + global_id.x) % uniforms.gridDim.x ;
-    let y = (global_id.x * global_id.y + global_id.x) / uniforms.gridDim.x ;
+    var x = (global_id.x * global_id.y + global_id.x) % uniforms.gridDim.x ;
+    var y = (global_id.x * global_id.y + global_id.x) / uniforms.gridDim.x ;
+
+    x = global_id.x;
+    y = global_id.y;
 
     if x * y + x > total_points {
         return;

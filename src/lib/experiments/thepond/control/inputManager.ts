@@ -5,6 +5,9 @@ export enum KeyPress {
     Up = "UP",
 }
 
+/**
+ * Handels the userinput with different devices like keyboard and mouse
+ */
 export class InputManager {
     private canvas: HTMLCanvasElement;
 

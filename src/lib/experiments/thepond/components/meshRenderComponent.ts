@@ -1,5 +1,11 @@
 import type { Material } from "../view/material";
 
+
+/**
+ * Component for Mesh data
+ *
+ * Entities with this Component are able to be renderd
+*/
 export class MeshRenderComponent {
     material: Material;
 

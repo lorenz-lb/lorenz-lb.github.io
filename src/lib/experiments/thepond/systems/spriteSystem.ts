@@ -3,8 +3,10 @@ import type { System } from "./system";
 import { SpriteComponent } from "../components/spriteComponent";
 import type { MeshRenderComponent } from "../components/meshRenderComponent";
 
+/**
+ * System to advance sprite animations 
+ */
 export class SpriteSystem implements System {
-
     update(
         sprites: Map<number, SpriteComponent>,
         render: Map<number, MeshRenderComponent>,

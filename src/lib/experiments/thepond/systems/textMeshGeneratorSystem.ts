@@ -1,12 +1,15 @@
-import { vec3, mat4 } from "gl-matrix"
 import type { System } from "./system";
-import type { TransformComponent } from "../components/transformComponent";
 import type { TextComponent } from "../components/textComponent";
 import { type AtlasMetaData, FONTATLAS_METADATA } from "../assets/fontAtlas/fontAtlas";
 
 const ATLAS_PIXEL_SIZE = 32;
 const VERTEX_SIZE_FLOATS = 4;
 
+/**
+ * Handles the creation of Mesh data to be able to render Text on Screen
+ *
+ * for each letter a quad is generated with a coresponding texture
+ */
 export class TextMeshGeneratorSystem implements System {
     fontAtlasMap: Map<string, AtlasMetaData>;
     device: GPUDevice;

@@ -3,14 +3,15 @@
 import type { RenderBatch } from "../types/renderBatch";
 import type { System } from "./system";
 
+/**
+ * Rendersystem for transparent materials 
+ */
 export class AlphaRenderSystem implements System {
-
     private globalBindGroup: GPUBindGroup;
 
     constructor(globalBindGroup: GPUBindGroup) {
         this.globalBindGroup = globalBindGroup;
     }
-
 
     update(
         commandEncoder: GPUCommandEncoder,

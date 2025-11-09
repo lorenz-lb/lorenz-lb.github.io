@@ -11,9 +11,9 @@ export class PlayerComponent {
   }
 }
 
-// ###########################
-//    Concrete Player Data 
-// ###########################
+// ##################################
+//    Actual Player animation Data 
+// ##################################
 export function getPlayerAnimationData(): [vec2, Map<string, AnimationStep[]>] {
   let animationMap: Map<string, AnimationStep[]> = new Map();
   let baseSize = vec2.fromValues(46, 17);
