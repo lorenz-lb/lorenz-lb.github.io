@@ -2,7 +2,7 @@
   import init, {
     rw_init_simulation,
     rw_update_simulation,
-  } from "$lib/wasm_rocessor";
+  } from "$lib/wasm_processor";
   import { onMount } from "svelte";
 
   // meta variables

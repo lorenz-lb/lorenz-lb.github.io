@@ -1,7 +1,7 @@
-import { vec3 } from "gl-matrix"
+import { vec2, vec3 } from "gl-matrix"
 
 /**
- * Material Properties like 
+ * Material Properties to describe a renderable material 
  */
 export interface MaterialProperies {
     name: string;
@@ -23,6 +23,7 @@ export interface MaterialProperies {
     // animation
     scrollSpeed?: number;
     parallaxFactor?: number;
+    spriteSheetDimension?: vec2;
 
     // // physics based
     // /** roughness */
@@ -48,7 +49,6 @@ export interface MaterialProperies {
  * Thus this class abstracts all material apects needed to perform computation within webgpu
  */
 export class Material {
-    // Material Props 
     name!: string;
     kd!: vec3;
     map_kd!: string | null;
@@ -59,7 +59,7 @@ export class Material {
     illum!: number;
     scrollSpeed!: number;
     parallaxFactor!: number;
-
+    spriteSheetDimension!: vec2;
 
     // Props
     hasTexture: boolean = false;
@@ -80,6 +80,7 @@ export class Material {
         constantsLayout: GPUBindGroupLayout,
         textureLayout: GPUBindGroupLayout | null = null) {
 
+        this.device = device;
         this.name = materialData.name;
         this.map_kd = materialData.map_kd ?? null;
         this.kd = materialData.kd;
@@ -92,17 +93,36 @@ export class Material {
 
         this.scrollSpeed = materialData.scrollSpeed ?? 0;
         this.parallaxFactor = materialData.parallaxFactor ?? 1.0;
+        this.spriteSheetDimension = materialData.spriteSheetDimension ?? vec2.fromValues(1, 1);
 
         this.pipeline = pipeline;
         this.createConstantGroup(device, constantsLayout);
 
-        // only texture if needed
         if (this.map_kd && textureLayout) {
             await this.createTextureGroup(device, textureLayout);
             this.hasTexture = true;
         }
     }
 
+    /**
+     * Sets the uvOffset in the material to enable sprite sheet animations
+    */
+    public setAnimationData(uvOffset: vec2) {
+        const bufferOffset = 20 * 4;
+
+        const animationData = new Float32Array([uvOffset[0], uvOffset[1], 0, 0]);
+
+        this.device.queue.writeBuffer(
+            this.constantsBuffer,
+            bufferOffset,
+            animationData
+        );
+    }
+
+    /**
+     * Creates the buffer which is dispatched to the GPU to descripte the material properties
+     * to be used in the shader
+    */
     private createConstantGroup(device: GPUDevice, layout: GPUBindGroupLayout) {
         const constantsData = new Float32Array([
             // Diffuse Color
@@ -114,9 +134,10 @@ export class Material {
             // shininess, alpha, illumination,scrollSpeed 
             this.ns, this.d, this.illum, this.scrollSpeed,
             //  prallaxfactor, padding
-            this.parallaxFactor, 0.0, 0.0, 0.0
+            this.parallaxFactor, this.spriteSheetDimension[0], this.spriteSheetDimension[1], 0.0,
+            // animationdata uv + padding
+            0, 0, 0, 0
         ]);
-
 
         this.constantsBuffer = device.createBuffer({
             size: constantsData.byteLength,

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import init, { init_simulation, update_simulation } from "$lib/wasm_rocessor";
+  import init, { init_simulation, update_simulation } from "$lib/wasm_processor";
 
   let rd_canvas: HTMLCanvasElement | null = null;
   let rd_numAgents = 20;

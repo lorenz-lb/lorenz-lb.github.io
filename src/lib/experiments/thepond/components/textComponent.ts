@@ -1,5 +1,11 @@
 import { vec2, vec4 } from "gl-matrix";
 
+/**
+ * Component for on screen text
+ *
+ * On screen text is renderd by creating a quad for each letter
+ * and setting a texture of a character
+ */
 export class TextComponent {
     text: string;
     position: vec2;

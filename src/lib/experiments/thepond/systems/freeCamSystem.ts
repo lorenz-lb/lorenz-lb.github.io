@@ -6,7 +6,9 @@ import type { CameraComponent } from "../components/cameraComponent";
 import { vec3, mat4 } from "gl-matrix";
 import { GameState } from "../control/gameState";
 
-
+/**
+ * Handles the movement when in debug cam
+ */
 export class FreeCamSystem implements System {
 
     private inputManager: InputManager;
@@ -86,13 +88,12 @@ export class FreeCamSystem implements System {
         }
 
         if (isQActive) {
-            upAmount -= deltaSpeed / 2;
+            upAmount -= deltaSpeed;
         }
 
         if (isEActive) {
-            upAmount += deltaSpeed / 2;
+            upAmount += deltaSpeed;
         }
-
 
         const flatForwards = vec3.clone(cameraComponent.forwards);
 

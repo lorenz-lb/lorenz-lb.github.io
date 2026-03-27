@@ -1,5 +1,4 @@
 import type { CameraComponent } from "../components/cameraComponent";
-import type { MeshRenderComponent } from "../components/meshRenderComponent";
 import type { TransformComponent } from "../components/transformComponent";
 import { GameState } from "../control/gameState";
 import { InputManager, KeyPress } from "../control/inputManager";
@@ -8,6 +7,12 @@ import type { System } from "./system";
 import type { AssetReferenceComponent } from "../components/assetReferenceComponent";
 import { Raycaster } from "../control/raycaster";
 
+/**
+ * DEBUG SYSTEM - Moves the object the Freecam looks at
+ *
+ * Enter freecam, look at object and, press leftclick, hold shift and move mouse
+ * this moves the object on the plane you are looking at
+ */
 export class PositionManipulationSystemDEBUG implements System {
 
     inputManager: InputManager;
@@ -29,7 +34,6 @@ export class PositionManipulationSystemDEBUG implements System {
             gameState.selectedEntityID = -1;
             return;
         }
-
 
         // cast on key down
         if (this.inputManager.primary === KeyPress.Down) {
@@ -100,6 +104,5 @@ export class PositionManipulationSystemDEBUG implements System {
             const pos = transformToMove.position;
             console.log(`Pos: X=${pos[0].toFixed(3)}, Y=${pos[1].toFixed(3)}, Z=${pos[2].toFixed(3)}`);
         }
-
     }
 }

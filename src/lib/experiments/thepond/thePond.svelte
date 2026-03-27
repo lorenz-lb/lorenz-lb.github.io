@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { App } from "./control/app";
+  import { ECSApp } from "./control/appECS";
+  import banner from "./banner.png";
 
   let gpuAvailable: boolean = false;
 
@@ -9,23 +10,61 @@
   }
 
   let pond_canvas: HTMLCanvasElement;
-  let text_key: HTMLHeadElement;
-  let text_mouse_x: HTMLHeadElement;
-  let text_mouse_y: HTMLHeadElement;
-
-  let app: App;
+  let app: ECSApp;
 
   onMount(async () => {
-    app = new App(pond_canvas, [text_key, text_mouse_x, text_mouse_y]);
+    app = new ECSApp(pond_canvas);
     app.startApp();
-    //app.initialize().then(() => app.run());
   });
 </script>
 
-<main class="flex mx-[1px]">
-  <div class="min-h-screen p-8 space-y-10 overflow-hidden">
+<main class="flex justify-center w-full">
+  <div class="p-8 space-y-10 w-full">
+    <!-- TEXT -->
+    <div class="space-y-10">
+      <!-- Banner -->
+      <img src={banner} alt={"banner"} />
+      <!-- Head -->
+      <h1 class="text-3xl font-bold text-center mb-8">WebGPU</h1>
+      <section>
+        <!-- prettier-ignore -->
+        <p class="">
+          WebGPU is seen as the successor to OpenGL. 
+          So WebGPU is a cross platform API for access the GPU.
+          WebGPU translates it's API calls to Vulcan / Metal / DirectX calls, depending on the system used. 
+          WebGPU can be used on many different plattforms and modern Browsers like Chrome or Firefox already enable WebGPU out of the box.
+          Safari from Apple also supports WebGPU but it needs to be enabled in the settings (at least on iPhone).
+          TODO
+        </p>
+        <!-- prettier-ignore -->
+        <p>The most interesting new addition to WebGPU compared to OpenGL are ComputeShaders.
+          Shaders are just special programs written to be executed on the GPU.
+          Compute Shaders are general purpose Programs which can accept and return data.</p>
+      </section>
+
+      <section>
+        <h2 class="text-xl">Controls</h2>
+        <!-- prettier-ignore -->
+        <p class="">
+         // table 
+        </p>
+      </section>
+
+      <section>
+        <h2 class="text-xl">Controls</h2>
+        <!-- prettier-ignore -->
+        <p class="">
+         // table 
+        </p>
+      </section>
+    </div>
+    <hr />
+    <div>
+      <p>ACTION ITEMS</p>
+    </div>
+
     {#if !gpuAvailable}
-      <h2>WebGPU is not available, no fishing today :(</h2>
+      <h2 class="text-center">WebGPU is not available, no fishing today :(</h2>
     {:else}
       <h2>Lets go fishing!</h2>
       <canvas
@@ -35,18 +74,6 @@
         height={1080 * 0.8}
         tabindex="0"
       ></canvas>
-      <div class="flex space-x-10">
-        <p>Key:</p>
-        <p bind:this={text_key}></p>
-      </div>
-      <div class="flex space-x-10">
-        <p>Mouse X:</p>
-        <p bind:this={text_mouse_x}></p>
-      </div>
-      <div class="flex space-x-10">
-        <p>Mouse Y:</p>
-        <p bind:this={text_mouse_y}></p>
-      </div>
     {/if}
   </div>
 </main>

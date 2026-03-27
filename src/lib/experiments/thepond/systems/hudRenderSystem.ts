@@ -4,8 +4,10 @@ import { mat4 } from "gl-matrix";
 import shaderCode from "../shaders/textShader.wgsl?raw";
 import { createFontAtlasBindings } from "../assets/fontAtlas/fontAtlas";
 
+/**
+ * Rendersystem to render orthogonal HUD elements on screen (eg. text)
+ */
 export class HUDRenderSystem implements System {
-    // GPU
     private device: GPUDevice;
     private vertexBufferLayout!: GPUVertexBufferLayout;
     private textPipeline!: GPURenderPipeline;
@@ -137,7 +139,6 @@ export class HUDRenderSystem implements System {
 
         this.updateOrthoMatrix();
 
-        // Saubere Zuweisung der aktuellen Canvas View
         const renderPassDescriptor = {
             label: "HUD Render Pass",
             colorAttachments: [{

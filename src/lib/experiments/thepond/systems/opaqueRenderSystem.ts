@@ -1,12 +1,16 @@
+import { GPUIndexFormat } from "three/src/renderers/webgpu/utils/WebGPUConstants.js";
 import type { RenderBatch } from "../types/renderBatch";
 import type { System } from "./system";
 
-
+/**
+ * Rendersystem for opaque objects
+ */
 export class OpaqueRenderSystem implements System {
-
+    private device: GPUDevice;
     private globalBindGroup: GPUBindGroup;
 
-    constructor(globalBindGroup: GPUBindGroup) {
+    constructor(device: GPUDevice, globalBindGroup: GPUBindGroup) {
+        this.device = device;
         this.globalBindGroup = globalBindGroup;
     }
 
@@ -16,7 +20,6 @@ export class OpaqueRenderSystem implements System {
         currentTextureView: GPUTextureView,
         dsAttachment: GPURenderPassDepthStencilAttachment): void {
 
-        // renderpass
         const renderPassDescriptor: GPURenderPassDescriptor = {
             colorAttachments: [{
                 view: currentTextureView,
@@ -41,20 +44,37 @@ export class OpaqueRenderSystem implements System {
 
         // all batches
         for (const batch of opaqueBatches) {
-            passEncoder.setPipeline(batch.pipeline);
-            passEncoder.setBindGroup(1, batch.constantsBindGroup);
 
-            if (batch.textureBindGroup) {
-                passEncoder.setBindGroup(2, batch.textureBindGroup);
+            if (batch.indexed && batch.indexBuffer) {
+                passEncoder.setPipeline(batch.pipeline);
+                passEncoder.setBindGroup(1, batch.constantsBindGroup);
+
+                if (batch.textureBindGroup) {
+                    passEncoder.setBindGroup(2, batch.textureBindGroup);
+                }
+
+                passEncoder.setVertexBuffer(0, batch.meshBuffer);
+                passEncoder.setVertexBuffer(1, instanceBuffer);
+                passEncoder.setIndexBuffer(batch.indexBuffer, GPUIndexFormat.Uint32);
+
+                passEncoder.drawIndexed(batch.indexCount, batch.instanceCount, 0, batch.instanceOffset);
             }
+            else {
+                passEncoder.setPipeline(batch.pipeline);
+                passEncoder.setBindGroup(1, batch.constantsBindGroup);
 
-            passEncoder.setVertexBuffer(0, batch.meshBuffer);
-            passEncoder.setVertexBuffer(1, instanceBuffer);
+                if (batch.textureBindGroup) {
+                    passEncoder.setBindGroup(2, batch.textureBindGroup);
+                }
 
-            // draw call
-            passEncoder.draw(batch.vertexCount, batch.instanceCount, 0, batch.instanceOffset);
+                passEncoder.setVertexBuffer(0, batch.meshBuffer);
+                passEncoder.setVertexBuffer(1, instanceBuffer);
+
+                passEncoder.draw(batch.vertexCount, batch.instanceCount, 0, batch.instanceOffset);
+            }
         }
 
         passEncoder.end();
     }
+
 }

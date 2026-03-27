@@ -1,5 +1,5 @@
-
 // WGSL Shader Code
+
 struct MaterialConstants {
     kdColor: vec4f,
     ksColor: vec4f,
@@ -41,11 +41,12 @@ struct VertexInput {
 struct VertexOutput {
     @builtin(position) position: vec4f,
     @location(0) uv: vec2f,
-    @location(1) lighting_intensity: f32,
+    @location(2) worldPos: vec3f,
+    @location(3) @interpolate(flat)  worldNormal: vec3f,
 };
 
 @vertex
-fn vs_main(input: VertexInput) -> VertexOutput {
+fn vs_main(@builtin(vertex_index) vertex_idx: u32, input: VertexInput) -> VertexOutput {
     var output: VertexOutput;
     let modelMatrix = mat4x4<f32>(
         input.modelMatrix_0,
@@ -54,15 +55,70 @@ fn vs_main(input: VertexInput) -> VertexOutput {
         input.modelMatrix_3
     );
 
-    let lightDirection: vec3f = normalize(vec3f(0.5, -0.5, -1.0));
-    output.position = uniforms.viewProjectionMatrix * modelMatrix * input.position;
-    // inverse v 
-    output.uv = vec2f(input.uv.x, 1 - input.uv.y);
-    let worldNormal = normalize((modelMatrix * input.normal).xyz);
-    let L: vec3f = -lightDirection;
-    let diffuseIntensity = max(dot(worldNormal, L), 0.5);
+    // ####### waves #########
+    let px = input.position.x;
+    let pz = input.position.z;
+    let worldPos = (modelMatrix * input.position).xyz;
+    let baseNormal = input.normal.xyz;
 
-    output.lighting_intensity = diffuseIntensity;
+    // ####### wave 1 #########
+    let amplitude1 = 0.2f;
+    let frequenz1 = 41f;
+    let speed1 = -0.05f ;
+
+
+    let time_term1 = frequenz1 * (px - speed1 * uniforms.time);
+    let offset_y1 = amplitude1 * sin(time_term1);
+    let slope1 = amplitude1 * frequenz1 * cos(time_term1);
+
+    // ####### wave 2 #########
+    let amplitude2 = 0.2f;
+    let frequenz2 = 119f;
+    let speed2 = -0.01f ;
+
+    let time_term2 = frequenz2 * (pz - speed2 * uniforms.time);
+    let offset_y2 = amplitude2 * (sin(time_term2));
+    let slope2 = amplitude2 * frequenz2 * cos(time_term2);
+
+    // ####### wave 3 #########
+    let amplitude3 = 0.2f;
+    let frequenz3 = 119f;
+    let speed3 = -0.01f ;
+
+    let time_term3 = frequenz3 * (pz + px - speed3 * uniforms.time);
+    let offset_y3 = amplitude3 * (sin(time_term3));
+    let slope3 = amplitude3 * frequenz3 * cos(time_term3);
+
+
+
+    // ### combine waves ###
+    var total_offset_y = offset_y2 + offset_y1 + offset_y3;
+    total_offset_y = 0;
+    let animatedWorldPos = worldPos + vec3f(0, total_offset_y, 0);
+
+
+    // ####### normals #########
+    var correctedNormal = normalize(vec3f(
+        (-slope1),
+        (1),
+        (-slope2)
+    ));
+
+    if vertex_idx % 16 == 0 {
+        correctedNormal = normalize(vec3f(
+            (1),
+            (1),
+            (1)
+        ));
+    }
+
+
+    let worldNormal = normalize((modelMatrix * vec4f(correctedNormal, 0.0)).xyz);
+
+    output.position = uniforms.viewProjectionMatrix * vec4(animatedWorldPos, 1.0);
+    output.worldPos = animatedWorldPos;
+    output.worldNormal = worldNormal;
+    output.uv = vec2f(input.uv.x, 1.0 - input.uv.y);
 
     return output;
 } 
@@ -70,22 +126,14 @@ fn vs_main(input: VertexInput) -> VertexOutput {
      @fragment
 fn fs_main(input: VertexOutput) -> @location(0) vec4f {
 
-    var colorVariation = sin(input.uv.x * 10) * 0.04;
+    let N: vec3f = normalize(input.worldNormal);
+    let L: vec3f = normalize(-vec3f(0.5, -1, 0.5));
+    let diffuseIntensity = max(dot(N, L), 0.0) ;
+    let ambient: f32 = 0.8;
+    let totalIntensity = ambient + diffuseIntensity;
 
+    var finalColor = materialUniforms.kdColor * totalIntensity ;
+    finalColor = vec4(input.worldNormal.xyz, 1.0);
 
-    var waves = (sin(input.uv.x * 200));
-    waves = waves * sin(0.5 * uniforms.time);
-
-
-    waves = select(0, waves, colorVariation > 0);
-
-
-
-
-
-    var finalColor = ((materialUniforms.kdColor.xyz) - colorVariation) + waves * 0.01 ;
-
-
-    //return vec4f(mat.xyz, 1.0);
     return vec4f(finalColor.xyz, 1.0);
 }

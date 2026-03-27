@@ -7,6 +7,12 @@ import type { System } from "./system";
 import { HUDRenderSystem } from "./hudRenderSystem";
 
 
+/**
+ * Renders with three passes
+ * 1. Opaque
+ * 2. Transparent
+ * 3. UI / Orthogonal
+ */
 export class RenderSystem implements System {
 
     private device: GPUDevice;
@@ -24,14 +30,14 @@ export class RenderSystem implements System {
         this.globalBindGroup = globalBindGroup;
         this.context = context;
 
-        this.opaqueRenderSystem = new OpaqueRenderSystem(this.globalBindGroup);
+        this.opaqueRenderSystem = new OpaqueRenderSystem(this.device, this.globalBindGroup);
         this.alphaRenderSystem = new AlphaRenderSystem(this.globalBindGroup);
         this.hudRenderSystem = new HUDRenderSystem(this.device, this.context.canvas.width, this.context.canvas.height);
 
         const depthTexture = this.device.createTexture({
             size: [context.canvas.width, context.canvas.height],
             format: 'depth24plus-stencil8',
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_DST,
+            usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
         } as GPUTextureDescriptor);
 
         this.depthTextureView = depthTexture.createView();

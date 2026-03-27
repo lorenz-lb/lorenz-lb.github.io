@@ -1,5 +1,4 @@
 import { vec2, vec3 } from "gl-matrix"
-import { Material } from "../view/material"
 
 export interface OBJData {
     v: vec3[]
@@ -18,8 +17,10 @@ export interface MTLData {
     map_bump: string;
 }
 
+/**
+ * Parser to read OBJ data
+ */
 export class OBJParser {
-
     public static createEmptyObjData(): OBJData {
         let objData = {
             v: [],
@@ -34,7 +35,6 @@ export class OBJParser {
         return objData;
     }
 
-    // obj parse
     private static async readOBJFile(url: string): Promise<OBJData> {
         let objData = OBJParser.createEmptyObjData();
         let result: number[] = [];
@@ -72,7 +72,7 @@ export class OBJParser {
                 }
 
                 currentMaterialName = newMaterialName;
-                currentStartIndex = result.length / 8; // Index des nächsten Vertex
+                currentStartIndex = result.length / 8;
             }
             else if (prefix === 'g') {
                 // const groupName = line.substring(2).trim();
@@ -166,6 +166,10 @@ export class OBJParser {
     }
 }
 
+
+/**
+ * Parser to read MTL data
+ */
 export class MTLParser {
     static async readMTLFile(url: string): Promise<{ [name: string]: MTLData }> {
         const basePath = url.replace(/\\/g, '/').substring(0, url.lastIndexOf('/') + 1);
@@ -178,7 +182,6 @@ export class MTLParser {
         let materials: { [name: string]: MTLData } = {};
         let currentMaterial: Partial<MTLData> | null = null;
 
-        // Standardwerte für Robustheit
         const defaultKd: vec3 = [1, 1, 1];
 
         for (const line of lines) {
@@ -186,7 +189,6 @@ export class MTLParser {
             const keyword = parts[0];
 
             if (keyword === 'newmtl') {
-                // 1. Altes Material abschließen
                 if (currentMaterial && currentMaterial.name) {
                     currentMaterial.kd = currentMaterial.kd || defaultKd;
                     currentMaterial.map_kd = currentMaterial.map_kd ? basePath + currentMaterial.map_kd : '';
@@ -195,7 +197,6 @@ export class MTLParser {
                     materials[currentMaterial.name] = currentMaterial as MTLData;
                 }
 
-                // 2. Neues Material starten
                 const name = parts[1].trim();
                 currentMaterial = { name: name };
             }
@@ -204,20 +205,17 @@ export class MTLParser {
                 continue;
             }
 
-            // 3. Eigenschaften parsen
-            else if (keyword === 'Kd') { // Diffuse Farbe (Basisfarbe)
+            else if (keyword === 'Kd') {
                 currentMaterial.kd = [Number(parts[1]), Number(parts[2]), Number(parts[3])] as vec3;
             }
-            else if (keyword === 'map_Kd') { // Pfad zur Diffuse Textur
-                // Nehmen wir an, der Pfad ist nur der zweite Teil
+            else if (keyword === 'map_Kd') {
                 currentMaterial.map_kd = parts[1];
             }
-            else if (keyword === 'map_Bump' || keyword === 'bump') { // Pfad zur Normal Map
+            else if (keyword === 'map_Bump' || keyword === 'bump') {
                 currentMaterial.map_bump = parts[1];
             }
         }
 
-        // 4. Das allerletzte Material abschließen
         if (currentMaterial && currentMaterial.name) {
             currentMaterial.kd = currentMaterial.kd || defaultKd;
             currentMaterial.map_kd = currentMaterial.map_kd ? basePath + currentMaterial.map_kd : '';

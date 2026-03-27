@@ -5,6 +5,9 @@ export enum KeyPress {
     Up = "UP",
 }
 
+/**
+ * Handels the userinput with different devices like keyboard and mouse
+ */
 export class InputManager {
     private canvas: HTMLCanvasElement;
 
@@ -16,6 +19,7 @@ export class InputManager {
     q: KeyPress = KeyPress.None;
     e: KeyPress = KeyPress.None;
     f: KeyPress = KeyPress.None;
+    c: KeyPress = KeyPress.None;
 
     // special keys
     shift: KeyPress = KeyPress.None;
@@ -104,6 +108,7 @@ export class InputManager {
         this.q = this.advanceKeyPress(this.q);
         this.e = this.advanceKeyPress(this.e);
         this.f = this.advanceKeyPress(this.f);
+        this.c = this.advanceKeyPress(this.c);
 
         // special keys
         this.shift = this.advanceKeyPress(this.shift);
