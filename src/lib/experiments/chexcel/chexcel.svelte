@@ -227,7 +227,7 @@ Once a famous man (who definitely lived a long and happy life and is not just a 
         </figure>
       </section>
       <section>
-        <h2>The Statemanagement</h2>
+        <h2>The State Management</h2>
         <p>
           To actually play chess, you need to manage at least some state. For
           example, you must remember whose turn it is to ensure that white can
@@ -440,7 +440,7 @@ A = [1,2,3,4]; B = [1,1,1,1]
           intersections of matrices. For that we need different matrices. First
           of all, an <code>ID_MATRIX</code> is created, which is just a table
           containing all IDs at the correct positions for each piece, respecting
-          if a piece is alive or not. Initial the <code>ID_MATRIX</code> looks something
+          if a piece is alive or not. Initially the <code>ID_MATRIX</code> looks something
           like this:
         </p>
         <figure class="fig-center">
@@ -589,7 +589,7 @@ A = [1,2,3,4]; B = [1,1,1,1]
         <p>Shoutout to the NamingManager in Excel, love that thing.</p>
         <br />
         <p>
-          Anit Shoutout to Excel not being able to open two different
+          Anti-Shoutout to Excel not being able to open two different
           spreadsheets with the same name.
         </p>
         <br />

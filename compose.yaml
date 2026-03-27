@@ -1,0 +1,23 @@
+services:
+  dev:
+    container_name: dev_githubIO 
+    build:
+      context: .
+      target: base
+
+    userns_mode: keep-id
+
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+
+    environment:
+      CHOKIDAR_USEPOLLING: "1"
+
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+      - "24678:24678"
+
+    tty: true
+    stdin_open: true

@@ -1,33 +1,38 @@
-FROM node:latest
+# =========================
+# BASE
+# =========================
+FROM mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV NVIM_INSTALLER_DIR="/opt/nvim"
-ARG USERNAME=devuser
-ENV PATH="$NVIM_INSTALL_DIR/bin:$PATH"
-ARG USERNAME=node
+ENV NVIM_INSTALL_DIR=/opt/nvim
+ENV XDG_CONFIG_HOME=/opt/xdg
 
 RUN apt update && \
-    apt install -y git curl python3 python3-pip && \
-    apt clean
+    apt install -y \
+      git \
+      curl \
+      ca-certificates \
+      tar \
+      gzip \
+      unzip \
+      build-essential \
+      && apt clean && rm -rf /var/lib/apt/lists/*
 
-# install neovim
-RUN mkdir $NVIM_INSTALLER_DIR && \
-    curl -LO https://github.com/neovim/neovim/releases/download/v0.11.4/nvim-linux-x86_64.tar.gz && \
-    tar xzvf nvim-linux-x86_64.tar.gz --directory=$NVIM_INSTALLER_DIR --strip-components=1 && \
-    ln -s $NVIM_INSTALLER_DIR/bin/nvim /usr/bin/nvim
+# install latest neovim (no apt)
+RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.4/nvim-linux-x86_64.tar.gz && \
+    mkdir -p "$NVIM_INSTALL_DIR" && \
+    tar xzf nvim-linux-x86_64.tar.gz --directory="$NVIM_INSTALL_DIR" --strip-components=1 && \
+    ln -s "$NVIM_INSTALL_DIR/bin/nvim" /usr/local/bin/nvim && \
+    rm nvim-linux-x86_64.tar.gz
 
-# load dotfiles
-RUN git clone https://github.com/lorenz-lb/personal_kickstart.nvim.git /home/$USERNAME/.config/nvim
+RUN mkdir -p "$XDG_CONFIG_HOME" && \
+    git clone https://github.com/lorenz-lb/personal_kickstart.nvim.git "$XDG_CONFIG_HOME/nvim" && \
+    chmod -R 777 "$XDG_CONFIG_HOME/nvim"
 
-RUN chown -R $USERNAME /usr/local 
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 
-WORKDIR /workspace 
-USER $USERNAME
+# workspace
+WORKDIR /workspace
 
-# rust for Wasm  
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="$PATH:$HOME/.cargo/bin"
-RUN cargo install wasm-pack
-
-# EXPOSE 9999 # TODO
 CMD ["sleep", "infinity"]
+
