@@ -76,11 +76,11 @@
 </script>
 
 <div
-  class="w-full h-full flex bg-winteal-500 relative"
+  class="w-full h-full flex bg-winteal-500 relative flex"
   onmousedown={handleMouseDown}
   role="main"
 >
-  <div class="p-10 z-0">
+  <div class="p-10 z-0 flex flex-col flex-wrap justify-start">
     {#each availablePrograms as program, index}
       <DesktopIcon
         name={program.title}
