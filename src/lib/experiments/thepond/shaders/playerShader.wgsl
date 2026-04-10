@@ -60,52 +60,62 @@ fn vs_main(input: VertexInput) -> VertexOutput {
         input.modelMatrix_3
     );
 
-    // ####### PARAMS #########
-    let px = uniforms.boatX + 0.005 ;
-    let pz = uniforms.boatZ + 0.005;
+    // ####### waves #########
+    var px = uniforms.boatX;
+    var pz = uniforms.boatZ;
     let worldPos = (modelMatrix * input.position).xyz;
     let baseNormal = input.normal.xyz;
 
-    let amplitude1 = 0.2f;
-    let frequenz1 = 41f;
-    let speed1 = -0.05f;
+    let boatWorld = (modelMatrix * vec4(uniforms.boatX, uniforms.boatY, uniforms.boatZ, 1.0)).xyz;
 
-    let amplitude2 = 0.2f;
-    let frequenz2 = 119f;
-    let speed2 = -0.01f;
-
+    // px = boatWorld.x;
+    // pz = boatWorld.z;
 
     // ####### wave 1 #########
-    let time_term1 = frequenz1 * (px - speed1 * uniforms.time);
-    let offset_y1 = amplitude1 * sin(time_term1);
-    let slopeX = amplitude1 * frequenz1 * cos(time_term1);
+    let amplitude1 = 0.3f;
+    let f1 = 0.5f;
+    let speed1 = -1.0f ;
 
-    let time_term2 = frequenz2 * (pz - speed2 * uniforms.time);
+    let time_term1 = f1 * (px - speed1 * uniforms.time);
+    var offset_y1 = amplitude1 * sin(time_term1);
+
+    // ####### wave 2 #########
+    let amplitude2 = 0.1f;
+    let f2 = 1f;
+    let speed2 = 0.3f ;
+
+    let time_term2 = (f2 * (pz - speed2 * uniforms.time));
     let offset_y2 = amplitude2 * (sin(time_term2));
-    let slopeZ = amplitude2 * frequenz2 * cos(time_term2);
 
-    var total_offset_y = offset_y2 + offset_y1;
-    total_offset_y = offset_y1;
+    // ####### wave 3 #########
+    let amplitude3 = 0.1f;
+    let f3 = 2f;
+    let speed3 = -0.5f ;
 
-    total_offset_y = total_offset_y ;
+    let time_term3 = f3 * (pz + px - speed3 * uniforms.time);
+    let offset_y3 = amplitude3 * (sin(time_term3));
+
+    // ### combine waves ###
+    var total_offset_y = offset_y1 + offset_y2 + offset_y3;
+    //total_offset_y = offset_y3;
 
 
+    let slopeX = (amplitude1 * f1 * cos(time_term1));
 
     // ######### pitch ###########
 
-    var yaw = atan(slopeX * -0.005);
+
+    var rotation = atan(slopeX * -0.5);
 
     let rotationY = mat4x4<f32>(
-        vec4f(cos(yaw), 0.0, sin(yaw), 0.0),
+        vec4f(cos(rotation), 0.0, sin(rotation), 0.0),
         vec4f(0.0, 1.0, 0.0, 0.0),
-        vec4f(-sin(yaw), 0.0, cos(yaw), 0.0),
+        vec4f(-sin(rotation), 0.0, cos(rotation), 0.0),
         vec4f(0.0, 0.0, 0.0, 1.0)
     );
 
-    // Kombiniere die Rotationen
-    let rotationMatrix = rotationY;
 
-    let rotatedLocalPos = (rotationMatrix * input.position).xyz;
+    var rotatedLocalPos = (rotationY * input.position).xyz;
     let finalWorldPos = (modelMatrix * vec4f(rotatedLocalPos, 1.0)).xyz;
     let animatedWorldPos = finalWorldPos + vec3f(0.0, total_offset_y, 0.0);
 

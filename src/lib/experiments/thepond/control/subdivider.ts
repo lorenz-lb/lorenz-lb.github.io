@@ -13,11 +13,14 @@ export class Subdivider {
     computePipeline!: GPUComputePipeline;
     bindGroupLayout!: GPUBindGroupLayout;
 
-    // private readonly GRID_SIZE_X: number = Math.pow(2, 10);
-    // private readonly GRID_SIZE_Y: number = Math.pow(2, 10);
+    // private readonly GRID_SIZE_X: number = Math.pow(2, 9);
+    // private readonly GRID_SIZE_Y: number = Math.pow(2, 9);
 
-    private readonly GRID_SIZE_X: number = Math.pow(2, 4);
-    private readonly GRID_SIZE_Y: number = Math.pow(2, 4);
+    private readonly GRID_SIZE_X: number = Math.pow(2, 6);
+    private readonly GRID_SIZE_Y: number = Math.pow(2, 6);
+    //
+    // private readonly GRID_SIZE_X: number = Math.pow(2, 9);
+    // private readonly GRID_SIZE_Y: number = Math.pow(2, 9);
 
     private readonly TOTAL_POINTS = this.GRID_SIZE_X * this.GRID_SIZE_Y;
     private readonly NUM_INDEX_BUFFER_ELEMENTS = 4 * 3 * (((this.GRID_SIZE_X - 1) * 2) * (this.GRID_SIZE_Y - 1));

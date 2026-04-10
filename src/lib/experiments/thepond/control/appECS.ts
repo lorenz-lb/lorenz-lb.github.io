@@ -382,7 +382,7 @@ export class ECSApp {
     */
     run = (time: number) => {
         // Use the delta time to be independent of the final framerate
-        const timeInSeconds = time / 1000;
+        let timeInSeconds = time / 1000;
         const dt = timeInSeconds - this.lastTime;
         this.lastTime = timeInSeconds;
 
@@ -443,6 +443,9 @@ export class ECSApp {
         globalUniformArray[21] = playerTransform.position[0];
         globalUniformArray[22] = playerTransform.position[1];
         globalUniformArray[23] = playerTransform.position[2];
+
+        console.log(`Player: ${playerTransform.position[0]} ${playerTransform.position[1]} ${playerTransform.position[2]} `)
+
 
         this.device.queue.writeBuffer(
             this.globalUniformBuffer,
